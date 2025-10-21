@@ -12,9 +12,9 @@ from torch.utils.tensorboard import SummaryWriter
 import datetime
 from pathlib import Path
 from math import prod
+#from matplotlib import pyplot as plt
 
-
-torch.manual_seed(12)
+torch.manual_seed(15)
 
 #αποθηκευση των runs σε υποφακελους
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
@@ -41,8 +41,8 @@ test_ds=Subset(train_ds_full, range(3500))
 
 
 #variables
-batch_size=600
-epoch_number=100
+batch_size=16
+epoch_number=10
 lr=1e-3
 min_delta=1e-4
 
@@ -228,7 +228,11 @@ with torch.no_grad():
         test_total+=images.size(0)
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
+    conf_matrix=torch.confusion_matrix(labels=labels, predictions=predictions)
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
+    print(conf_matrix)
+
+
 
 
 if __name__ == '__main__':
