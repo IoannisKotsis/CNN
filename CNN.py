@@ -25,6 +25,7 @@ day_path.mkdir(parents=True, exist_ok=True)
 time_path.mkdir(parents=True, exist_ok=True)
 writer=SummaryWriter(time_path)
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 os.makedirs('saved_models', exist_ok=True)
 
@@ -41,8 +42,8 @@ test_ds=Subset(train_ds_full, range(3500))
 
 
 #variables
-batch_size=16
-epoch_number=10
+batch_size=32
+epoch_number=70
 lr=1e-3
 min_delta=1e-4
 
