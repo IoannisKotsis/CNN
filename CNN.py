@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from sympy.physics.control.control_plots import matplotlib
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from torch.utils.data import random_split
@@ -12,9 +13,10 @@ from torch.utils.tensorboard import SummaryWriter
 import datetime
 from pathlib import Path
 from math import prod
-#from matplotlib import pyplot as plt
+from torchmetrics import ConfusionMatrix
+from matplotlib import pyplot as plt
 
-torch.manual_seed(15)
+#torch.manual_seed(15)
 
 #αποθηκευση των runs σε υποφακελους
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
@@ -28,6 +30,7 @@ writer=SummaryWriter(time_path)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 os.makedirs('saved_models', exist_ok=True)
+os.makedirs('checkpoints', exist_ok=True)
 
 transform=transforms.Compose([transforms.Resize(size=(28,28)),transforms.ToTensor(),transforms.Normalize((0.1307,), (0.3081,))])     #μετατροπη εικονων σε PyTorch float tensor + κανονικοποιηση τιμων + κανονικοποιηση
 
@@ -42,8 +45,8 @@ test_ds=Subset(train_ds_full, range(3500))
 
 
 #variables
-batch_size=32
-epoch_number=70
+batch_size=16
+epoch_number=5
 lr=1e-3
 min_delta=1e-4
 
@@ -201,6 +204,14 @@ for epoch in range(epoch_number):
     if (best_val_loss-final_val_loss)>min_delta:
         best_val_loss=final_val_loss
         best_state=copy.deepcopy(model.state_dict())
+        torch.save({                                               #αποθηκευση του λεξικού με το καλύτερο μοντέλο σε pytorch αρχείο
+            'epoch': epoch,
+            'model_state_dict':model.state_dict(),
+            'optimizer_state_dict':optimizer.state_dict(),
+            'loss': epoch_loss
+            },'checkpoints/CNN_best_model.pth')
+
+
         wait=0
     else:
         wait+=1
@@ -229,11 +240,13 @@ with torch.no_grad():
         test_total+=images.size(0)
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
-    conf_matrix=torch.confusion_matrix(labels=labels, predictions=predictions)
+    confmat=ConfusionMatrix(task='multiclass',num_classes=10)
+    conf_matrix=confmat(predictions,labels)
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(conf_matrix)
 
-
+#plt.imshow(conf_matrix)
+#plt.show()
 
 
 if __name__ == '__main__':
