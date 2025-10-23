@@ -393,3 +393,4 @@ $RECYCLE.BIN/
 mnist/
 runs/
 saved_models/
+checkpoints/
