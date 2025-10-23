@@ -46,7 +46,7 @@ test_ds=Subset(train_ds_full, range(3500))
 
 #variables
 batch_size=16
-epoch_number=5
+epoch_number=6
 lr=1e-3
 min_delta=1e-4
 
