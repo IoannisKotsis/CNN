@@ -39,6 +39,15 @@ transform=transforms.Compose([
     transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
                          ])
 
+
+social_media_label_map={'Instagram':0,
+                        'Pinterest':1,
+                        'Snapchat':2,
+                        'TikTok':3,
+                        'YouTube':4,
+                        'Other':5,
+                        'Not sure':6}
+
 #$$$$$$$$$$$$$$$$-------
 
 #δημιουργία φακέλου για tensorboard
@@ -67,37 +76,51 @@ images_folder_path=Path("//wsl.localhost/Debian/home/ioanniskotsis/datasets/digi
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:100]:
+for i in annotations[:5]:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
+
     relevant_value = None
+    social_media_value = None
+
     for a in answers:
-        if a.get('variable')=='is-relevant':
-            relevant_value=a.get('answer')
-    rows.append({'image_filepath': str(full_path),'is-relevant': str(relevant_value) if relevant_value is not None else ''})
+        if a.get('variable')=='is-relevant' and a.get('answer')=='Yes':
+            relevant_value = a.get('answer')
+            for b in answers:
+                if b.get('variable') == 'social-media-channel':
+                    social_media_value = b.get('answer')
+
+    rows.append({'image_filepath': str(full_path),'is-relevant': str(relevant_value), 'social-media-channel': str(social_media_value)})
     #rows= πινακας με 1 λεξικό για καθε εικόνα
 
 
-#ανοιγμα csv file και προσθηκη στηλών
-csv_fieldnames=('image_filepath','is-relevant')
 
-with open('project_ki/csv_files/CSV_main.csv', 'w', newline='') as csvfile:
+#ανοιγμα csv file και προσθηκη στηλών
+filtered_rows=[r for r in rows if r.get('is-relevant')=='Yes']
+csv_fieldnames=('image_filepath','social-media-channel')
+
+with open('project_ki/csv_files/CSV_edited.csv', 'w', newline='') as csvfile:
     csv_writer=csv.DictWriter(csvfile, fieldnames=csv_fieldnames)
     csv_writer.writeheader()   #γραφει τα ονοματα των στηλών
-    for row in rows:
-        csv_writer.writerow(row)
+    for row in filtered_rows:
+            csv_writer.writerow({
+                'image_filepath': row['image_filepath'],
+                'social-media-channel': row['social-media-channel'],
+                    })
+
+
 
 #split csv
-csv_lenth=len(rows)
-train_split=int(train_split_pct * csv_lenth)  #70% του συνόλου του rows
-validation_split=int(validation_split_pct * csv_lenth)
-test_split=int(test_split_pct * csv_lenth)
+csv_length=len(filtered_rows)
+train_split=int(train_split_pct * csv_length)  #70% του συνόλου του rows
+validation_split=int(validation_split_pct * csv_length)
+test_split=int(test_split_pct * csv_length)
 
-random.shuffle(rows)
-train_rows=rows[:train_split]
-validation_rows=rows[train_split:validation_split]
-test_rows=rows[validation_split:]
+random.shuffle(filtered_rows)
+train_rows=filtered_rows[:train_split]
+validation_rows=filtered_rows[train_split:validation_split]
+test_rows=filtered_rows[validation_split:]
 
 #συναρτηση δημιουργιας csv splits
 def csv_creator(filename,data):
@@ -114,10 +137,13 @@ test_csv=csv_creator('project_ki/csv_files/test_csv.csv', test_rows)
 #κλάση δημιουργίας dataset
 
 class ImageDataset(Dataset):
-    def __init__(self, csvfile,transform=None):
+    def __init__(self,
+                 csvfile,
+                 social_media_label_map,
+                 transform=None):
         self.transform=transform
         self.samples = []
-        self.label_map={'No':0,'Yes':1}
+        self.social_media_label_map=social_media_label_map
         with open(csvfile, 'r', newline='') as data_file:
             reader=csv.DictReader(data_file)
             for i in reader:
@@ -129,12 +155,12 @@ class ImageDataset(Dataset):
     def __getitem__(self, index):
         sample=self.samples[index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
         image_path=sample['image_filepath']     #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
-        label_value=self.label_map.get(sample['is-relevant'],0)     #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
+        social_media_label_value=self.social_media_label_map.get(sample['social-media-channel'])     #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
 
         image=Image.open(image_path).convert('RGB')
         if self.transform is not None:
             image=self.transform(image)
-        return image, label_value  #επιστρεφει tuple ((3,224,224),0/1)
+        return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0/1)
 
 
 #δημιουργία datasets
