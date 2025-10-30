@@ -35,7 +35,7 @@ min_delta=1e-4
 
 transform=transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize(224,224),
+    transforms.Resize(96,96),
     transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
                          ])
 
@@ -110,7 +110,6 @@ with open('project_ki/csv_files/CSV_edited.csv', 'w', newline='') as csvfile:
                     })
 
 
-
 #split csv
 csv_length=len(filtered_rows)
 train_split=int(train_split_pct * csv_length)  #70% του συνόλου του rows
@@ -174,8 +173,6 @@ test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
 
 
 
-
-
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -219,6 +216,7 @@ class ConvBlock(nn.Module):
 
     def forward(self,x):
         x=self.conv(x)
+        χ=self.bn1(x)
         x=F.gelu(x)
         x=self.pool(x)
         return x
@@ -232,8 +230,8 @@ class Network(nn.Module):
     def __init__(self,
                  input_dims,
                  output_dims,
-                 linear1_output_size=100,
-                 linear2_output_size=100
+                 linear1_output_size=50,
+                 linear2_output_size=50
                  ):
         super().__init__()
         self.block1=ConvBlock(input_dims, 8)
@@ -262,7 +260,7 @@ class Network(nn.Module):
         return x
 
 
-model=Network(input_dims=(224,224,3),output_dims=10)
+model=Network(input_dims=(96,96,3),output_dims=10)
 criterion=nn.CrossEntropyLoss()
 optimizer=optim.Adam(model.parameters(), lr)
 
