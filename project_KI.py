@@ -76,7 +76,7 @@ images_folder_path=Path("//wsl.localhost/Debian/home/ioanniskotsis/datasets/digi
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:5]:
+for i in annotations[:3]:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')

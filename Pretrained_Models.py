@@ -17,7 +17,7 @@ from torchvision.models import resnet18, ResNet18_Weights
 #αποθηκευση των runs σε υποφακελους
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
 time_stamp=datetime.datetime.now().strftime("%H-%M-%S")
-day_path=Path('runs/logs')/day_stamp
+day_path= Path('runs/tb_logs') / day_stamp
 time_path=day_path/time_stamp
 day_path.mkdir(parents=True, exist_ok=True)
 time_path.mkdir(parents=True, exist_ok=True)

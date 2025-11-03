@@ -224,7 +224,7 @@ MANIFEST
 *.manifest
 *.spec
 
-# Installer logs
+# Installer tb_logs
 pip-log.txt
 pip-delete-this-directory.txt
 

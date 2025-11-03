@@ -21,7 +21,7 @@ from matplotlib import pyplot as plt
 #αποθηκευση των runs σε υποφακελους
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
 time_stamp=datetime.datetime.now().strftime("%H-%M-%S")
-day_path=Path('runs/logs')/day_stamp
+day_path= Path('runs/tb_logs') / day_stamp
 time_path=day_path/time_stamp
 day_path.mkdir(parents=True, exist_ok=True)
 time_path.mkdir(parents=True, exist_ok=True)
@@ -37,7 +37,7 @@ transform=transforms.Compose([transforms.Resize(size=(28,28)),transforms.ToTenso
 full_ds=datasets.MNIST(root='mnist',train=True,transform=transform,download=True)  #φορτωνει το MNIST train_and_val (60.000 εικονες)
 train_ds_full=datasets.MNIST(root='mnist',train=False,transform=transform,download=True)
 
-#g = torch.Generator().manual_seed(0)
+#g = torch.Generatlsor().manual_seed(0)
 train_ds=Subset(full_ds, range(5500))
 val_ds=Subset(full_ds, range(5500,7500))
 test_ds=Subset(train_ds_full, range(3500))
