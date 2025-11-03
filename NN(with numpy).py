@@ -13,7 +13,6 @@ class HiddenLayer:
         self.outputs = np.dot(inputs,self.weights) + self.biases
         return self.outputs
 
-
 layer1=HiddenLayer(4,3)
 layer2=HiddenLayer(3,2)
 

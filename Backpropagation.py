@@ -17,6 +17,7 @@ class Network(nn.Module):
         out3=torch.sigmoid(self.layer3(out2))
         return out3
 
+
 model=Network()
 out3=model(inputs)
 
