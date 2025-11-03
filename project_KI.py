@@ -35,7 +35,7 @@ min_delta=1e-4
 
 transform=transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize(96,96),
+    transforms.Resize(64,64),
     transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
                          ])
 
@@ -53,7 +53,7 @@ social_media_label_map={'Instagram':0,
 #δημιουργία φακέλου για tensorboard
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
 time_stamp=datetime.datetime.now().strftime("%H-%M-%S")
-day_path=Path('runs/logs')/day_stamp
+day_path= Path('runs/tb_logs') / day_stamp
 time_path=day_path/time_stamp
 day_path.mkdir(parents=True, exist_ok=True)
 time_path.mkdir(parents=True, exist_ok=True)
@@ -241,7 +241,7 @@ class Network(nn.Module):
 
         self.flatten = nn.Flatten()
         self.gelu=nn.GELU()
-        self.dropout=nn.Dropout(0.4)
+        self.dropout=nn.Dropout(0.2)
         self.fc1=nn.Linear(prod(self.block3.output_dims()) , linear1_output_size)
         self.fc2 = nn.Linear(linear1_output_size, linear2_output_size)
         self.output_layer = nn.Linear(linear2_output_size, output_dims)
@@ -253,14 +253,14 @@ class Network(nn.Module):
         x=self.block3(x)
         x=self.flatten(x)
         x=self.gelu(self.fc1(x))
-        x=self.dropout(x)
         x=self.gelu(self.fc2(x))
         x=self.dropout(x)
         x=self.output_layer(x)
         return x
 
 
-model=Network(input_dims=(96,96,3),output_dims=10)
+model=Network(input_dims=(64,64,3),output_dims=10)
+model.to(device)
 criterion=nn.CrossEntropyLoss()
 optimizer=optim.Adam(model.parameters(), lr)
 
