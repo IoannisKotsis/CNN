@@ -18,14 +18,12 @@ from math import prod
 import json
 import random
 
-from Pretrained_Models import batch_size
-
-random.seed(25)
+random.seed(18)
 
 #$$$$$$$$$$$$$-----
 
 #variables
-batch_size=16
+batch_size=64
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
@@ -167,9 +165,9 @@ training_dataset=ImageDataset(train_csv,train=True,transform=transform)
 validation_dataset=ImageDataset(validation_csv,train=False,transform=transform)
 test_dataset=ImageDataset(test_csv,train=False,transform=transform)
 
-train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
-validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
-test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
+train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True, num_workers=4)
+validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False, num_workers=4)
+test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False, num_workers=4)
 
 
 
