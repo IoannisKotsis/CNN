@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 import datetime
 from pathlib import Path
 from math import prod
-from torchmetrics import ConfusionMatrix
+#from sklearn.metrics import confusion_matrix
 import json
 import random
 
@@ -29,7 +29,7 @@ batch_size=16
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
-epoch_number=7
+epoch_number=10
 lr=1e-3
 min_delta=1e-4
 
@@ -295,8 +295,6 @@ for epoch in range(epoch_number):
     training_accuracy=(train_correct/train_total)*100
 
 
-
-    #torch.save(model, f'saved_models/model_epoch_{epoch}.pth')   #αποθηκευση μοντέλου καθε epoch ως ξεχωριστο αρχειο
     writer.add_scalar('Training Loss', epoch_loss, epoch)
 
 #validation
@@ -365,10 +363,10 @@ with torch.no_grad():
         test_total+=images.size(0)
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
-    confmat=ConfusionMatrix(task='multiclass',num_classes=10)
-    conf_matrix=confmat(predictions,labels)
+    #confmat=ConfusionMatrix(task='multiclass',num_classes=10)
+    #conf_matrix=confmat(predictions,labels)
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
-    print(conf_matrix)
+    #print(conf_matrix)
 
 #plt.imshow(conf_matrix)
 #plt.show()
