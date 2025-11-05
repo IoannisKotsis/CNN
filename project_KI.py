@@ -64,16 +64,16 @@ os.makedirs(os.path.join('project_ki','csv_files'),exist_ok=True)
 os.makedirs(os.path.join(project_ki,'checkpoints'),exist_ok=True)
 
 #ανοιγμα του json file
-with open('project_ki/data/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8') as file:
+with open('datasets/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8') as file:
     annotations=json.load(file)
 
 #path των εικόνων
-images_folder_path=Path("//wsl.localhost/Debian/home/ioanniskotsis/datasets/digital-ads")
+images_folder_path=Path("datasets/digital-ads")
 
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:1000]:
+for i in annotations[:100]:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
