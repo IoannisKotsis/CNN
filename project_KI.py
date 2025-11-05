@@ -64,7 +64,7 @@ os.makedirs(os.path.join('project_ki','csv_files'),exist_ok=True)
 os.makedirs(os.path.join(project_ki,'checkpoints'),exist_ok=True)
 
 #ανοιγμα του json file
-with open('/home/ioankots/projects/CNN/datasets/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8') as file:
+with open('/home/ioankots/projects/CNN/datasets/digital-ads/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8') as file:
     annotations=json.load(file)
 
 #path των εικόνων
