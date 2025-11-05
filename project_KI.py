@@ -1,11 +1,10 @@
 import csv
-from tkinter import Image
+from PIL import Image
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from sympy.physics.control.control_plots import matplotlib
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -74,7 +73,7 @@ images_folder_path=Path("//wsl.localhost/Debian/home/ioanniskotsis/datasets/digi
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:3]:
+for i in annotations[:1000]:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
@@ -108,23 +107,39 @@ with open('project_ki/csv_files/CSV_edited.csv', 'w', newline='') as csvfile:
                     })
 
 
+print(f'Length of filtered rows',len(filtered_rows))
+
+
 #split csv
 csv_length=len(filtered_rows)
-train_split=int(train_split_pct * csv_length)  #70% του συνόλου του rows
-validation_split=int(validation_split_pct * csv_length)
-test_split=int(test_split_pct * csv_length)
+train_split=int(np.ceil(train_split_pct * csv_length))  #70% του συνόλου του rows
+validation_split=int(np.ceil(validation_split_pct * csv_length))
+test_split=int(csv_length - validation_split - train_split)
 
 random.shuffle(filtered_rows)
 train_rows=filtered_rows[:train_split]
-validation_rows=filtered_rows[train_split:validation_split]
-test_rows=filtered_rows[validation_split:]
+validation_rows=filtered_rows[train_split:train_split+validation_split]
+test_rows=filtered_rows[train_split+validation_split:]
+
+print(f'Length of train rows',len(train_rows))
+print(f'Length of validation rows',len(validation_rows))
+print(f'Length of test rows',len(test_rows))
+
+csv_fieldnames=('image_filepath','social-media-channel')
+
 
 #συναρτηση δημιουργιας csv splits
 def csv_creator(filename,data):
     with open(filename,'w',newline='') as f:
         creator=csv.DictWriter(f,fieldnames=csv_fieldnames)
         creator.writeheader()
-        creator.writerows(data)
+        for k in data:
+            creator.writerow({
+                'image_filepath': k['image_filepath'],
+                'social-media-channel': k['social-media-channel']
+                    })
+
+        return filename
 
 train_csv=csv_creator('project_ki/csv_files/train_csv.csv', train_rows)
 validation_csv=csv_creator('project_ki/csv_files/validation_csv.csv', validation_rows)
@@ -161,19 +176,24 @@ class ImageDataset(Dataset):
 
 
 #δημιουργία datasets
-training_dataset=ImageDataset(train_csv,train=True,transform=transform)
-validation_dataset=ImageDataset(validation_csv,train=False,transform=transform)
-test_dataset=ImageDataset(test_csv,train=False,transform=transform)
+training_dataset=ImageDataset(train_csv,social_media_label_map,transform=transform)
+validation_dataset=ImageDataset(validation_csv,social_media_label_map,transform=transform)
+test_dataset=ImageDataset(test_csv,social_media_label_map,transform=transform)
 
-train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True, num_workers=4)
-validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False, num_workers=4)
-test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False, num_workers=4)
+train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
+validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
+test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
 
-
+print(f'Length of training dataset',len(training_dataset))
+print(f'Length of validation dataset',len(validation_dataset))
+print(f'Length of test dataset',len(test_dataset))
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+print(f'Train loader size',len(train_loader))
+print(f'Validation loader size',len(validation_loader))
+print(f'Test loader size',len(test_loader))
 
 
 
@@ -310,7 +330,7 @@ for epoch in range(epoch_number):
             val_correct += (preds == labels).sum().item()
             val_total += images.size(0)
 
-        val_acc = (val_correct /val_total)*100
+        val_acc = (val_correct/val_total)*100
         final_val_loss = validation_loss / len(validation_loader.dataset)
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
@@ -369,6 +389,6 @@ with torch.no_grad():
 #plt.imshow(conf_matrix)
 #plt.show()
 
-
+print('end')
 if __name__ == '__main__':
     pass
