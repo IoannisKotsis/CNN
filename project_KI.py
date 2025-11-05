@@ -277,7 +277,7 @@ class Network(nn.Module):
 
 
 
-model=Network(input_dims=(64,64,3),output_dims=10)
+model=Network(input_dims=(64,64,3),output_dims=6)
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -343,6 +343,7 @@ for epoch in range(epoch_number):
         final_val_loss = validation_loss / len(validation_loader.dataset)
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
+    print(f'->Final validation loss: {final_val_loss}')
     writer.add_scalar('Validation Loss', final_val_loss, epoch)
     writer.add_scalars('Accuracy Metrics', {
         'Validation Accuracy': val_acc,
@@ -366,7 +367,7 @@ for epoch in range(epoch_number):
     else:
         wait+=1
         if wait>=patience:
-            print(f'----Training stopped after {epoch} epochs with best validation loss: {best_val_loss:.6f}----')
+            print(f'->Training stopped after {epoch} epochs with best validation loss: {best_val_loss:.6f}')
             break
 
     if best_state is not None:
