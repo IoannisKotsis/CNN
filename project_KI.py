@@ -26,7 +26,7 @@ batch_size=64
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
-epoch_number=10
+epoch_number=200
 lr=1e-3
 min_delta=1e-4
 
