@@ -304,8 +304,8 @@ for epoch in range(epoch_number):
     train_total=0
 
     for images, labels in train_loader:
-        images.to(device)
-        labels.to(device)
+        images=images.to(device)
+        labels=labels.to(device)
         optimizer.zero_grad()
         x=model(images)
         loss=criterion(x, labels)
@@ -330,8 +330,8 @@ for epoch in range(epoch_number):
         val_total = 0
 
         for images, labels in validation_loader:
-            images.to(device)
-            labels.to(device)
+            images=images.to(device)
+            labels=labels.to(device)
             x = model(images)
             loss = criterion(x, labels)
             validation_loss+=loss.item()*images.size(0)
@@ -382,8 +382,8 @@ with torch.no_grad():
     test_total=0
 
     for images, labels in test_loader:
-        images.to(device)
-        labels.to(device)
+        images=images.to(device)
+        labels=labels.to(device)
         x=model(images)
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
