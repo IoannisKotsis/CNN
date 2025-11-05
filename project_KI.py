@@ -277,7 +277,7 @@ class Network(nn.Module):
 
 
 
-model=Network(input_dims=(64,64,3),output_dims=6)
+model=Network(input_dims=(64,64,3),output_dims=7)
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -341,9 +341,10 @@ for epoch in range(epoch_number):
 
         val_acc = (val_correct/val_total)*100
         final_val_loss = validation_loss / len(validation_loader.dataset)
+        print(f'->Final validation loss: {final_val_loss}')
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
-    print(f'->Final validation loss: {final_val_loss}')
+
     writer.add_scalar('Validation Loss', final_val_loss, epoch)
     writer.add_scalars('Accuracy Metrics', {
         'Validation Accuracy': val_acc,
