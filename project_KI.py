@@ -188,8 +188,7 @@ print(f'Length of training dataset',len(training_dataset))
 print(f'Length of validation dataset',len(validation_dataset))
 print(f'Length of test dataset',len(test_dataset))
 
-#χρήση GPU (εαν υπάρχει)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 print(f'Train loader size',len(train_loader))
 print(f'Validation loader size',len(validation_loader))
@@ -277,7 +276,12 @@ class Network(nn.Module):
         return x
 
 
+
 model=Network(input_dims=(64,64,3),output_dims=10)
+
+#χρήση GPU (εαν υπάρχει)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 model.to(device)
 criterion=nn.CrossEntropyLoss()
 optimizer=optim.Adam(model.parameters(), lr)
@@ -300,6 +304,8 @@ for epoch in range(epoch_number):
     train_total=0
 
     for images, labels in train_loader:
+        images.to(device)
+        labels.to(device)
         optimizer.zero_grad()
         x=model(images)
         loss=criterion(x, labels)
@@ -317,12 +323,15 @@ for epoch in range(epoch_number):
 
 #validation
     with torch.no_grad():
+
         model.eval()
         validation_loss = 0.0
         val_correct = 0
         val_total = 0
 
         for images, labels in validation_loader:
+            images.to(device)
+            labels.to(device)
             x = model(images)
             loss = criterion(x, labels)
             validation_loss+=loss.item()*images.size(0)
@@ -373,6 +382,8 @@ with torch.no_grad():
     test_total=0
 
     for images, labels in test_loader:
+        images.to(device)
+        labels.to(device)
         x=model(images)
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
