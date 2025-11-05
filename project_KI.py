@@ -68,7 +68,7 @@ with open('datasets/image-annotations.questionnaire_answers.json', 'r', encoding
     annotations=json.load(file)
 
 #path των εικόνων
-images_folder_path=Path("datasets/digital-ads")
+images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 
 rows=[]
