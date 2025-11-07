@@ -74,7 +74,7 @@ images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:3000]:
+for i in annotations[:6000]:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
@@ -194,7 +194,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 #φορτωνω pretrained resnet18
 weights=ResNet18_Weights.DEFAULT
-model=resnet18(weights=weights)
+model=resnet18(weights=weights).to(device)
 
 model.fc=nn.Linear(model.fc.in_features, 7)    #classifier
 
