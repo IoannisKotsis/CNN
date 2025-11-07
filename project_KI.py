@@ -26,7 +26,7 @@ batch_size=64
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
-epoch_number=200
+epoch_number=150
 lr=1e-3
 min_delta=1e-4
 
@@ -251,9 +251,9 @@ class Network(nn.Module):
                  linear2_output_size=50
                  ):
         super().__init__()
-        self.block1=ConvBlock(input_dims, 8)
-        self.block2=ConvBlock(self.block1.output_dims(), 16)
-        self.block3=ConvBlock(self.block2.output_dims(), 32)
+        self.block1=ConvBlock(input_dims, 32)  #βγαζει 8 feature maps
+        self.block2=ConvBlock(self.block1.output_dims(), 64)
+        self.block3=ConvBlock(self.block2.output_dims(), 128)
 
 
         self.flatten = nn.Flatten()
