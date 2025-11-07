@@ -4,15 +4,18 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-from torch.utils.data import random_split
-from torch.utils.data import Subset
+from torchvision import transforms
+from torch.utils.data import Dataset
 import os
 from torch.utils.tensorboard import SummaryWriter
 import datetime
 from pathlib import Path
 from torchvision.models import resnet18, ResNet18_Weights
-
+import random
+from PIL import Image
+from torch.utils.tensorboard import SummaryWriter
+import json
+import csv
 
 #αποθηκευση των runs σε υποφακελους
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
@@ -27,42 +30,173 @@ writer=SummaryWriter(time_path)
 os.makedirs('saved_models', exist_ok=True)
 
 
-transform=transforms.Compose([
-    transforms.Grayscale(num_output_channels=3),
-    transforms.Resize((224,224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
-    ])
-
-full_ds=datasets.MNIST(root='mnist',train=True,transform=transform,download=True)  #φορτωνει το MNIST train_and_val (60.000 εικονες)
-train_ds_full=datasets.MNIST(root='mnist',train=False,transform=transform,download=True)
-
-#g = torch.Generator().manual_seed(0)
-train_ds=Subset(full_ds, range(5500))
-val_ds=Subset(full_ds, range(5500,7500))
-test_ds=Subset(train_ds_full, range(3500))
-#train_ds, val_ds, test_ds = random_split(full_ds,[50000,5000,5000], generator=g)
-
-
 #variables
-batch_size=6
-epoch_number=2
+batch_size=64
+train_split_pct=0.7
+validation_split_pct=0.15
+test_split_pct=0.15
+epoch_number=200
 lr=1e-3
 min_delta=1e-4
 
-train_loader=DataLoader(train_ds,batch_size=batch_size,shuffle=True)  #πακετάρισμα training δεδομενων σε batches των 64
-val_loader=DataLoader(val_ds,batch_size=batch_size,shuffle=False)   #πακετάρισμα validation δεδομενων σε batches των 256
-test_loader=DataLoader(test_ds, batch_size=batch_size, shuffle=False)  #πακετάρισμα test δεδομενων σε batches των 128
+transform=transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Resize((64,64)),
+    transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
+                         ])
+
+
+social_media_label_map={'Instagram':0,
+                        'Pinterest':1,
+                        'Snapchat':2,
+                        'TikTok':3,
+                        'YouTube':4,
+                        'Other':5,
+                        'Not sure':6}
+
+
+#φάκελος του project
+project_ki='project_ki'
+os.makedirs('project_ki', exist_ok=True)
+os.makedirs(os.path.join('project_ki','data'),exist_ok=True)
+os.makedirs(os.path.join('project_ki','csv_files'),exist_ok=True)
+os.makedirs(os.path.join(project_ki,'checkpoints'),exist_ok=True)
+
+
+
+#ανοιγμα του json file
+with open('/home/ioankots/projects/CNN/datasets/digital-ads/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8') as file:
+    annotations=json.load(file)
+
+#path των εικόνων
+images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
+
+
+rows=[]
+#επιλογη των paths και των values που θελω
+for i in annotations[:3000]:
+    path=i.get('image_filepath')
+    full_path=images_folder_path/path
+    answers = i.get('answers')
+
+    relevant_value = None
+    social_media_value = None
+
+    for a in answers:
+        if a.get('variable')=='is-relevant' and a.get('answer')=='Yes':
+            relevant_value = a.get('answer')
+            for b in answers:
+                if b.get('variable') == 'social-media-channel':
+                    social_media_value = b.get('answer')
+
+    rows.append({'image_filepath': str(full_path),'is-relevant': str(relevant_value), 'social-media-channel': str(social_media_value)})
+    #rows= πινακας με 1 λεξικό για καθε εικόνα
+
+
+
+#ανοιγμα csv file και προσθηκη στηλών
+filtered_rows=[r for r in rows if r.get('is-relevant')=='Yes']
+csv_fieldnames=('image_filepath','social-media-channel')
+
+with open('project_ki/csv_files/CSV_edited.csv', 'w', newline='') as csvfile:
+    csv_writer=csv.DictWriter(csvfile, fieldnames=csv_fieldnames)
+    csv_writer.writeheader()   #γραφει τα ονοματα των στηλών
+    for row in filtered_rows:
+            csv_writer.writerow({
+                'image_filepath': row['image_filepath'],
+                'social-media-channel': row['social-media-channel'],
+                    })
+
+
+print(f'Length of filtered rows',len(filtered_rows))
+
+
+#split csv
+csv_length=len(filtered_rows)
+train_split=int(np.ceil(train_split_pct * csv_length))  #70% του συνόλου του rows
+validation_split=int(np.ceil(validation_split_pct * csv_length))
+test_split=int(csv_length - validation_split - train_split)
+
+random.shuffle(filtered_rows)
+train_rows=filtered_rows[:train_split]
+validation_rows=filtered_rows[train_split:train_split+validation_split]
+test_rows=filtered_rows[train_split+validation_split:]
+
+print(f'Length of train rows',len(train_rows))
+print(f'Length of validation rows',len(validation_rows))
+print(f'Length of test rows',len(test_rows))
+
+csv_fieldnames=('image_filepath','social-media-channel')
+
+
+#συναρτηση δημιουργιας csv splits
+def csv_creator(filename,data):
+    with open(filename,'w',newline='') as f:
+        creator=csv.DictWriter(f,fieldnames=csv_fieldnames)
+        creator.writeheader()
+        for k in data:
+            creator.writerow({
+                'image_filepath': k['image_filepath'],
+                'social-media-channel': k['social-media-channel']
+                    })
+
+        return filename
+
+train_csv=csv_creator('project_ki/csv_files/train_csv.csv', train_rows)
+validation_csv=csv_creator('project_ki/csv_files/validation_csv.csv', validation_rows)
+test_csv=csv_creator('project_ki/csv_files/test_csv.csv', test_rows)
+
+
+#κλάση δημιουργίας dataset
+
+class ImageDataset(Dataset):
+    def __init__(self,
+                 csvfile,
+                 social_media_label_map,
+                 transform=None):
+        self.transform=transform
+        self.samples = []
+        self.social_media_label_map=social_media_label_map
+        with open(csvfile, 'r', newline='') as data_file:
+            reader=csv.DictReader(data_file)
+            for i in reader:
+                self.samples.append(i)
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, index):
+        sample=self.samples[index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
+        image_path=sample['image_filepath']     #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
+        social_media_label_value=self.social_media_label_map.get(sample['social-media-channel'])     #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
+
+        image=Image.open(image_path).convert('RGB')
+        if self.transform is not None:
+            image=self.transform(image)
+        return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0/1)
+
+
+#δημιουργία datasets
+training_dataset=ImageDataset(train_csv,social_media_label_map,transform=transform)
+validation_dataset=ImageDataset(validation_csv,social_media_label_map,transform=transform)
+test_dataset=ImageDataset(test_csv,social_media_label_map,transform=transform)
+
+train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
+validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
+test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
 
 
 #-----------------------------------------#NETWORK---------------------------------------
+
+#χρήση GPU (εαν υπάρχει)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 #φορτωνω pretrained resnet18
 weights=ResNet18_Weights.DEFAULT
 model=resnet18(weights=weights)
 
-model.fc=nn.Linear(model.fc.in_features, 10)    #classifier
+model.fc=nn.Linear(model.fc.in_features, 7)    #classifier
 
 #παγωνω βάρη του μοντελου
 for p in model.parameters():
@@ -102,6 +236,8 @@ for epoch in range(epoch_number):
     train_total=0
 
     for images, labels in train_loader:
+        images=images.to(device)
+        labels=labels.to(device)
         optimizer.zero_grad()
         x=model(images)
         loss=criterion(x, labels)
@@ -128,7 +264,9 @@ for epoch in range(epoch_number):
         val_correct = 0
         val_total = 0
 
-        for images, labels in val_loader:
+        for images, labels in validation_loader:
+            images = images.to(device)
+            labels = labels.to(device)
             x = model(images)
             loss = criterion(x, labels)
             validation_loss+=loss.item()*images.size(0)
@@ -137,7 +275,7 @@ for epoch in range(epoch_number):
             val_total += images.size(0)
 
         val_acc = (val_correct /val_total)*100
-        final_val_loss = validation_loss / len(val_loader.dataset)
+        final_val_loss = validation_loss / len(validation_loader.dataset)
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
     writer.add_scalar('Validation Loss', final_val_loss, epoch)
@@ -171,6 +309,8 @@ with torch.no_grad():
     test_total=0
 
     for images, labels in test_loader:
+        images = images.to(device)
+        labels = labels.to(device)
         x=model(images)
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
