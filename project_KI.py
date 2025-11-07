@@ -121,9 +121,6 @@ train_rows=filtered_rows[:train_split]
 validation_rows=filtered_rows[train_split:train_split+validation_split]
 test_rows=filtered_rows[train_split+validation_split:]
 
-print(f'Length of train rows',len(train_rows))
-print(f'Length of validation rows',len(validation_rows))
-print(f'Length of test rows',len(test_rows))
 
 csv_fieldnames=('image_filepath','social-media-channel')
 
@@ -341,7 +338,7 @@ for epoch in range(epoch_number):
 
         val_acc = (val_correct/val_total)*100
         final_val_loss = validation_loss / len(validation_loader.dataset)
-        print(f'->Final validation loss: {final_val_loss}')
+
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
 
