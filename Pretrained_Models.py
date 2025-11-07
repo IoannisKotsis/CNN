@@ -41,7 +41,7 @@ min_delta=1e-4
 
 transform=transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((64,64)),
+    transforms.Resize((224,224)),
     transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
                          ])
 
@@ -218,6 +218,9 @@ optimizer=optim.Adam([
 ])
 
 criterion=nn.CrossEntropyLoss()
+
+#χρήση GPU (εαν υπάρχει)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 #καθορισμος παραμετρων early stopping
