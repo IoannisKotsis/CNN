@@ -191,10 +191,9 @@ test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-
 #φορτωνω pretrained resnet18
 weights=ResNet18_Weights.DEFAULT
-model=resnet18(weights=weights).to(device)
+model=resnet18(weights=weights)
 
 model.fc=nn.Linear(model.fc.in_features, 7)    #classifier
 
@@ -208,6 +207,7 @@ for name, p in model.named_parameters():
     if name.startswith(('layer4','fc')):
         p.requires_grad=True
 
+model.to(device)
 
 trainable_params=(p for p in model.parameters() if p.requires_grad)
 optimizer=optim.Adam(trainable_params,lr=lr)
@@ -218,9 +218,6 @@ optimizer=optim.Adam([
 ])
 
 criterion=nn.CrossEntropyLoss()
-
-#χρήση GPU (εαν υπάρχει)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 #καθορισμος παραμετρων early stopping
