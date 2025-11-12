@@ -394,7 +394,7 @@ with torch.no_grad():
         test_total+=images.size(0)
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
-    conf_matrix=confusion_matrix(labels,predictions)
+    conf_matrix=confusion_matrix(labels.cpu().numpy(),predictions.cpu().numpy())
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(conf_matrix)
 
