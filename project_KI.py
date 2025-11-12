@@ -319,7 +319,6 @@ for epoch in range(epoch_number):
     training_accuracy=(train_correct/train_total)*100
 
 
-    writer.add_scalar('Loss Curves/Training Loss', epoch_loss, epoch)
 
 #validation
     with torch.no_grad():
@@ -345,14 +344,18 @@ for epoch in range(epoch_number):
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
 
-    writer.add_scalar('Loss Curves/Validation Loss', final_val_loss, epoch)
+
     writer.add_scalars('Accuracy Metrics', {
+        'Training Accuracy': training_accuracy,
         'Validation Accuracy': val_acc,
-        'Training Accuracy': training_accuracy
     }, epoch)
 
+    writer.add_scalars('Loss Curves', {
+        'Training Loss': epoch_loss,
+        'validation Loss': final_val_loss
+    }, epoch)
 
-#early stopping
+    #early stopping
     if (best_val_loss-final_val_loss)>min_delta:
         best_val_loss=final_val_loss
         best_state=copy.deepcopy(model.state_dict())
