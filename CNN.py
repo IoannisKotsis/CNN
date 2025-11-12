@@ -15,6 +15,7 @@ from pathlib import Path
 from math import prod
 from torchmetrics import ConfusionMatrix
 from matplotlib import pyplot as plt
+import copy
 
 #torch.manual_seed(15)
 
@@ -72,6 +73,7 @@ class ConvBlock(nn.Module):
         super().__init__()
         self._input_shape = input_dims[:-1]       #κρατάει (28,28) απο το (28,28,1)
         self._input_channels = input_dims[-1]   #κρατάει (1) απο το (28,28,1)
+        self._output_channels = num_filters
 
         #Περιπτώσεις padding
         if padding == 'same':
@@ -85,7 +87,7 @@ class ConvBlock(nn.Module):
         else:
             raise NotImplementedError
 
-        self._output_channels = num_filters
+
         self.conv=nn.Conv2d(input_dims[-1], num_filters, kernel_size=conv_kernel_size, stride=conv_stride, padding=padding)
         self.bn1=nn.BatchNorm2d(num_filters)
         self.pool=nn.MaxPool2d(kernel_size=pool_kernel_size, stride=pool_stride, padding=pool_padding)
@@ -140,13 +142,11 @@ criterion=nn.CrossEntropyLoss()
 optimizer=optim.Adam(model.parameters(), lr)
 
 
-
-#καθορισμος παραμετρων early stopping
-import copy
-best_val_loss=float('inf')
-best_state=None
-patience=5
-wait=0
+# καθορισμος παραμετρων early stopping
+best_val_loss = float('inf')
+best_state = None
+patience = 5
+wait = 0
 
 
 #training
@@ -180,6 +180,8 @@ for epoch in range(epoch_number):
         validation_loss = 0.0
         val_correct = 0
         val_total = 0
+        all_preds=[]
+        all_labels=[]
 
         for images, labels in val_loader:
             x = model(images)
@@ -188,6 +190,8 @@ for epoch in range(epoch_number):
             preds = x.argmax(1)
             val_correct += (preds == labels).sum().item()
             val_total += images.size(0)
+            all_preds.append(preds)
+            all_labels.append(labels)
 
         val_acc = (val_correct /val_total)*100
         final_val_loss = validation_loss / len(val_loader.dataset)
@@ -198,6 +202,7 @@ for epoch in range(epoch_number):
         'Validation Accuracy': val_acc,
         'Training Accuracy': training_accuracy
     }, epoch)
+
 
 
 #early stopping
@@ -211,16 +216,15 @@ for epoch in range(epoch_number):
             'loss': epoch_loss
             },'checkpoints/CNN_best_model.pth')
 
-
         wait=0
     else:
         wait+=1
         if wait>=patience:
             print(f'----Training stopped after {epoch} epochs with best validation loss: {best_val_loss:.6f}----')
+            if best_state is not None:
+                model.load_state_dict(best_state)
             break
 
-    if best_state is not None:
-        model.load_state_dict(best_state)
 
 writer.close()
 
