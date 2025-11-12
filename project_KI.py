@@ -1,4 +1,6 @@
 import csv
+
+import pandas as pd
 from PIL import Image
 import numpy as np
 import torch
@@ -33,7 +35,7 @@ min_delta=1e-4
 transform=transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize((64,64)),
-    transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
+    transforms.Normalize(mean=(0,0,0),std=(1,1,1))
                          ])
 
 
@@ -73,7 +75,7 @@ images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:3000]:
+for i in annotations[:6000]:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
@@ -82,7 +84,7 @@ for i in annotations[:3000]:
     social_media_value = None
 
     for a in answers:
-        if a.get('variable')=='is-relevant' and a.get('answer')=='Yes':
+        if a.get('variable')=='is-relevant':
             relevant_value = a.get('answer')
             for b in answers:
                 if b.get('variable') == 'social-media-channel':
@@ -91,7 +93,9 @@ for i in annotations[:3000]:
     rows.append({'image_filepath': str(full_path),'is-relevant': str(relevant_value), 'social-media-channel': str(social_media_value)})
     #rows= πινακας με 1 λεξικό για καθε εικόνα
 
+print('Checkpoint')
 
+#df=pd.DataFrame(rows)
 
 #ανοιγμα csv file και προσθηκη στηλών
 filtered_rows=[r for r in rows if r.get('is-relevant')=='Yes']
@@ -121,8 +125,6 @@ train_rows=filtered_rows[:train_split]
 validation_rows=filtered_rows[train_split:train_split+validation_split]
 test_rows=filtered_rows[train_split+validation_split:]
 
-
-csv_fieldnames=('image_filepath','social-media-channel')
 
 
 #συναρτηση δημιουργιας csv splits
@@ -169,7 +171,7 @@ class ImageDataset(Dataset):
         image=Image.open(image_path).convert('RGB')
         if self.transform is not None:
             image=self.transform(image)
-        return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0/1)
+        return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0,1,...6)
 
 
 #δημιουργία datasets
@@ -277,7 +279,8 @@ class Network(nn.Module):
 model=Network(input_dims=(64,64,3),output_dims=7)
 
 #χρήση GPU (εαν υπάρχει)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f'running on device:',device)
 
 model.to(device)
 criterion=nn.CrossEntropyLoss()
