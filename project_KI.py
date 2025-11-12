@@ -1,6 +1,6 @@
 import csv
 
-#import pandas as pd
+import pandas as pd
 from PIL import Image
 import numpy as np
 import torch
@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 import datetime
 from pathlib import Path
 from math import prod
-#from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix
 import json
 import random
 
@@ -75,7 +75,7 @@ images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:6000]:
+for i in annotations:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
@@ -394,10 +394,10 @@ with torch.no_grad():
         test_total+=images.size(0)
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
-    #confmat=ConfusionMatrix(task='multiclass',num_classes=10)
-    #conf_matrix=confmat(predictions,labels)
+    confmat=confusion_matrix(task='multiclass',num_classes=10)
+    conf_matrix=confmat(predictions,labels)
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
-    #print(conf_matrix)
+    print(conf_matrix)
 
 #plt.imshow(conf_matrix)
 #plt.show()
