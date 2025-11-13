@@ -39,11 +39,11 @@ epoch_number=200
 lr=1e-3
 min_delta=1e-4
 
-transform=transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Resize((224,224)),
-    transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
-                         ])
+#φορτωνω pretrained resnet18
+weights=ResNet18_Weights.DEFAULT
+model=resnet18(weights=weights)
+transform=weights.transforms()
+
 
 
 social_media_label_map={'Instagram':0,
@@ -74,7 +74,7 @@ images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:6000]:
+for i in annotations:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
@@ -189,11 +189,7 @@ test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
 #-----------------------------------------#NETWORK---------------------------------------
 
 #χρήση GPU (εαν υπάρχει)
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-#φορτωνω pretrained resnet18
-weights=ResNet18_Weights.DEFAULT
-model=resnet18(weights=weights)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 model.fc=nn.Linear(model.fc.in_features, 7)    #classifier
 
@@ -209,15 +205,21 @@ for name, p in model.named_parameters():
 
 model.to(device)
 
-trainable_params=(p for p in model.parameters() if p.requires_grad)
-optimizer=optim.Adam(trainable_params,lr=lr)
-
 optimizer=optim.Adam([
-    {'params': [p for name,p in model.named_parameters() if name.startswith(('layer4'))], 'lr': 1e-4},
-    {'params': [p for name,p in model.named_parameters() if name.startswith(('fc'))], 'lr': 1e-5},
+    {'params': [p for name,p in model.named_parameters() if name.startswith(('layer4'))], 'lr': 1e-5},
+    {'params': [p for name,p in model.named_parameters() if name.startswith(('fc'))], 'lr': 1e-4},
 ])
 
 criterion=nn.CrossEntropyLoss()
+
+def set_frozen_parts_to_eval(m: nn.Module):
+    m.bn1.eval()
+    m.layer1.eval()
+    m.layer2.eval()
+    m.layer3.eval()
+
+
+#------------------TRAIN-----------------------------------------------------
 
 
 #καθορισμος παραμετρων early stopping
@@ -231,6 +233,7 @@ wait=0
 #training
 for epoch in range(epoch_number):
     model.train()
+    set_frozen_parts_to_eval(model) #παγώνει και τα BN των frozen layers
     running_loss = 0.0
     train_correct=0
     train_total=0
