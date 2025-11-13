@@ -207,7 +207,7 @@ model.to(device)
 
 
 optimizer=optim.Adam([
-    {'params': [p for name,p in model.named_parameters() if name.startswith('layer4','fc')], 'lr': 1e-4},
+    {'params': [p for name,p in model.named_parameters() if name.startswith(('layer4','fc'))], 'lr': 1e-4},
     #{'params': [p for name,p in model.named_parameters() if name.startswith('fc')], 'lr': 1e-4},
 ])
 
