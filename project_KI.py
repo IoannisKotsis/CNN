@@ -361,7 +361,7 @@ with torch.no_grad():
 
     for images, labels in test_loader:
         images=images.to(device)
-        labels=int(labels.to(device))
+        labels=labels.to(device)
         x=model(images)
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
@@ -370,7 +370,7 @@ with torch.no_grad():
         test_total+=images.size(0)
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
-    conf_matrix=confusion_matrix(labels.cpu().numpy(),predictions.cpu().numpy(),labels=np.arange(7))
+    conf_matrix=confusion_matrix(labels.cpu().numpy().astype(int),predictions.cpu().numpy().astype(int),labels=np.arange(7))
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(conf_matrix)
 
