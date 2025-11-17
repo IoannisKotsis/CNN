@@ -92,7 +92,6 @@ for i in annotations[:2000]:
     rows.append({'image_filepath': str(full_path),'is-relevant': str(relevant_value), 'social-media-channel': str(social_media_value)})
     #rows= πινακας με 1 λεξικό για καθε εικόνα
 
-print('Checkpoint')
 
 #δημιουργια dataframe από rows
 rows_df=pd.DataFrame(rows)
@@ -362,7 +361,7 @@ with torch.no_grad():
 
     for images, labels in test_loader:
         images=images.to(device)
-        labels=labels.to(device)
+        labels=int(labels.to(device))
         x=model(images)
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
