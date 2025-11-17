@@ -1,5 +1,4 @@
 import csv
-
 import pandas as pd
 from PIL import Image
 import numpy as np
@@ -95,54 +94,33 @@ for i in annotations[:2000]:
 
 print('Checkpoint')
 
-#df=pd.DataFrame(rows)
+#δημιουργια dataframe από rows
+rows_df=pd.DataFrame(rows)
+yes_df=rows_df[rows_df['is-relevant']=='Yes']
+new_df=yes_df[['image_filepath','social-media-channel']]
 
-#ανοιγμα csv file και προσθηκη στηλών
-filtered_rows=[r for r in rows if r.get('is-relevant')=='Yes']
-csv_fieldnames=('image_filepath','social-media-channel')
-
-with open('project_ki/csv_files/CSV_edited.csv', 'w', newline='') as csvfile:
-    csv_writer=csv.DictWriter(csvfile, fieldnames=csv_fieldnames)
-    csv_writer.writeheader()   #γραφει τα ονοματα των στηλών
-    for row in filtered_rows:
-            csv_writer.writerow({
-                'image_filepath': row['image_filepath'],
-                'social-media-channel': row['social-media-channel'],
-                    })
+print(f'Length of filtered rows',len(new_df))
 
 
-print(f'Length of filtered rows',len(filtered_rows))
+#split dataframe
+df_length=len(new_df)
+train_split=int(train_split_pct * df_length)
+validation_split=int(validation_split_pct * df_length)
 
+#δημιουργια των splits
+shuffled_df=new_df.sample(frac=1,random_state=18)
+train_rows=shuffled_df[:train_split]
+validation_rows=shuffled_df[train_split:train_split+validation_split]
+test_rows=shuffled_df[train_split+validation_split:]
 
-#split csv
-csv_length=len(filtered_rows)
-train_split=int(np.ceil(train_split_pct * csv_length))  #70% του συνόλου του rows
-validation_split=int(np.ceil(validation_split_pct * csv_length))
-test_split=int(csv_length - validation_split - train_split)
+#δημιουργια των csv files
+train_rows.to_csv('project_ki/csv_files/train_csv.csv', index=False)
+validation_rows.to_csv('project_ki/csv_files/validation_csv.csv', index=False)
+test_rows.to_csv('project_ki/csv_files/test_csv.csv', index=False)
 
-random.shuffle(filtered_rows)
-train_rows=filtered_rows[:train_split]
-validation_rows=filtered_rows[train_split:train_split+validation_split]
-test_rows=filtered_rows[train_split+validation_split:]
-
-
-
-#συναρτηση δημιουργιας csv splits
-def csv_creator(filename,data):
-    with open(filename,'w',newline='') as f:
-        creator=csv.DictWriter(f,fieldnames=csv_fieldnames)
-        creator.writeheader()
-        for k in data:
-            creator.writerow({
-                'image_filepath': k['image_filepath'],
-                'social-media-channel': k['social-media-channel']
-                    })
-
-        return filename
-
-train_csv=csv_creator('project_ki/csv_files/train_csv.csv', train_rows)
-validation_csv=csv_creator('project_ki/csv_files/validation_csv.csv', validation_rows)
-test_csv=csv_creator('project_ki/csv_files/test_csv.csv', test_rows)
+train_csv='project_ki/csv_files/train_csv.csv'
+validation_csv='project_ki/csv_files/validation_csv.csv'
+test_csv='project_ki/csv_files/test_csv.csv'
 
 
 #κλάση δημιουργίας dataset
@@ -153,22 +131,18 @@ class ImageDataset(Dataset):
                  social_media_label_map,
                  transform=None):
         self.transform=transform
-        self.samples = []
+        self.samples =pd.read_csv(csvfile)
         self.social_media_label_map=social_media_label_map
-        with open(csvfile, 'r', newline='') as data_file:
-            reader=csv.DictReader(data_file)
-            for i in reader:
-                self.samples.append(i)
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, index):
-        sample=self.samples[index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
+        sample=self.samples.iloc[index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
         image_path=sample['image_filepath']     #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
         social_media_label_value=self.social_media_label_map.get(sample['social-media-channel'])     #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
-
         image=Image.open(image_path).convert('RGB')
+
         if self.transform is not None:
             image=self.transform(image)
         return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0,1,...6)
