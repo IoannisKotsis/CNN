@@ -14,11 +14,13 @@ from torch.utils.tensorboard import SummaryWriter
 import datetime
 from pathlib import Path
 from math import prod
+import sklearn
 from sklearn.metrics import confusion_matrix
 import json
 import random
 #from torchmetrics import ConfusionMatrix
 random.seed(18)
+
 
 #$$$$$$$$$$$$$-----
 
@@ -375,12 +377,12 @@ with torch.no_grad():
         predictions=x.argmax(1)
         test_correct+=(predictions==labels).sum().item()
         test_total+=images.size(0)
-        all_labels.extend(labels)
-        all_predictions.extend(predictions)
+        all_labels.extend(labels.cpu().numpy().astype(int))
+        all_predictions.extend(predictions.cpu().numpy().astype(int))
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
-    conf_matrix=confusion_matrix(all_labels,all_predictions,labels=np.arange(7))
+    conf_matrix=sklearn.confusion_matrix(all_labels,all_predictions,labels=np.arange(7))
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(conf_matrix)
 
