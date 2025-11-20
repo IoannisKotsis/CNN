@@ -33,7 +33,7 @@ min_delta=1e-4
 
 transform=transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((354,768))
+    transforms.Resize((64,64))
                          ])
 
 
