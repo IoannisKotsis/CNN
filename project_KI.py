@@ -17,7 +17,7 @@ from math import prod
 from sklearn.metrics import confusion_matrix
 import json
 import random
-from torchmetrics import ConfusionMatrix
+#from torchmetrics import ConfusionMatrix
 random.seed(18)
 
 #$$$$$$$$$$$$$-----
@@ -363,6 +363,8 @@ with torch.no_grad():
     testing_loss=0.0
     test_correct=0
     test_total=0
+    all_labels=[]
+    all_predictions=[]
 
     for images, labels in test_loader:
         images=images.to(device)
@@ -373,10 +375,12 @@ with torch.no_grad():
         predictions=x.argmax(1)
         test_correct+=(predictions==labels).sum().item()
         test_total+=images.size(0)
+        all_labels.extend(labels)
+        all_predictions.extend(predictions)
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
-    conf_matrix=ConfusionMatrix(num_classes=7)
-    #conf_matrix=confusion_matrix(labels.cpu().numpy().astype(int),predictions.cpu().numpy().astype(int),labels=np.arange(7))
+    #conf_matrix=ConfusionMatrix(num_classes=7)
+    conf_matrix=confusion_matrix(labels.cpu().numpy().astype(int),predictions.cpu().numpy().astype(int),labels=np.arange(7))
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(conf_matrix)
 
