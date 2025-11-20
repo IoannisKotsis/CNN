@@ -33,8 +33,7 @@ min_delta=1e-4
 
 transform=transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((64,64)),
-    transforms.Normalize(mean=(0,0,0),std=(1,1,1))
+    transforms.Resize((64,64))
                          ])
 
 
@@ -144,6 +143,12 @@ class ImageDataset(Dataset):
 
         if self.transform is not None:
             image=self.transform(image)
+
+        mean=image.mean(dim=(1,2), keepdim=True)  #(3,1,1)
+        std=image.mean(dim=(1, 2), keepdim=True)  #(3,1,1)
+        std = torch.clamp(std, min=1e-6)  #για να μη διαιρεσει με 0
+        image=(image-mean)/std
+
         return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0,1,...6)
 
 
