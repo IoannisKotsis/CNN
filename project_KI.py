@@ -148,8 +148,8 @@ class ImageDataset(Dataset):
         if self.transform is not None:
             image=self.transform(image)
 
-        mean=image.mean(dim=(1,2), keepdim=True)  #(3,1,1)
-        std=image.mean(dim=(1, 2), keepdim=True)  #(3,1,1)
+        mean=image.mean(dim=(1,2), keepdim=True)  #(3,1,1) - υπολογιζει mean σε στις διαστασεις (1,2) δλδ (H,W)
+        std=image.std(dim=(1, 2), keepdim=True)  #(3,1,1)
         std = torch.clamp(std, min=1e-6)  #για να μη διαιρεσει με 0
         image=(image-mean)/std
 
