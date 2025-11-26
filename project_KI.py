@@ -25,7 +25,7 @@ random.seed(18)
 #$$$$$$$$$$$$$-----
 
 #variables
-batch_size=128
+batch_size=32
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
@@ -48,6 +48,8 @@ social_media_label_map={'Instagram':0,
                         'Not sure':6}
 
 #$$$$$$$$$$$$$$$$-------
+
+print(f'Batch size: {batch_size}')
 
 #δημιουργία φακέλου για tensorboard
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
