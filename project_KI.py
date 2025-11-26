@@ -25,7 +25,7 @@ random.seed(18)
 #$$$$$$$$$$$$$-----
 
 #variables
-batch_size=64
+batch_size=128
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
