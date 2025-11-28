@@ -258,7 +258,7 @@ class Network(nn.Module):
 
 
 
-model=Network(input_dims=(64,64,3),output_dims=7)
+model=Network(input_dims=(224,224,3),output_dims=7)
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
