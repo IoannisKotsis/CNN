@@ -39,13 +39,9 @@ transform=transforms.Compose([
                          ])
 
 
-social_media_label_map={'Instagram':0,
-                        'Pinterest':1,
-                        'Snapchat':2,
-                        'TikTok':3,
-                        'YouTube':4,
-                        'Other':5,
-                        'Not sure':6}
+creator_label_map={'Company':0,
+                    'Individual':1,
+                    'Not sure':2}
 
 #$$$$$$$$$$$$$$$$-------
 
@@ -83,23 +79,23 @@ for i in annotations:
     answers = i.get('answers')
 
     relevant_value = None
-    social_media_value = None
+    creator_value = None
 
     for a in answers:
         if a.get('variable')=='is-relevant':
             relevant_value = a.get('answer')
             for b in answers:
-                if b.get('variable') == 'social-media-channel':
-                    social_media_value = b.get('answer')
+                if b.get('variable') == 'creator':
+                    creator_value = b.get('answer')
 
-    rows.append({'image_filepath': str(full_path),'is-relevant': str(relevant_value), 'social-media-channel': str(social_media_value)})
+    rows.append({'image_filepath': str(full_path),'is-relevant': str(relevant_value), 'creator': str(creator_value)})
     #rows= πινακας με 1 λεξικό για καθε εικόνα
 
 
 #δημιουργια dataframe από rows
 rows_df=pd.DataFrame(rows)
 yes_df=rows_df[rows_df['is-relevant']=='Yes']
-new_df=yes_df[['image_filepath','social-media-channel']]
+new_df=yes_df[['image_filepath','creator']]
 
 print(f'Length of filtered rows',len(new_df))
 
@@ -130,11 +126,11 @@ test_csv='project_ki/csv_files/test_csv.csv'
 class ImageDataset(Dataset):
     def __init__(self,
                  csvfile,
-                 social_media_label_map,
+                 creator_label_map,
                  transform=None):
         self.transform=transform
         self.samples =pd.read_csv(csvfile)
-        self.social_media_label_map=social_media_label_map
+        self.creator_label_map=creator_label_map
 
     def __len__(self):
         return len(self.samples)
@@ -142,7 +138,7 @@ class ImageDataset(Dataset):
     def __getitem__(self, index):
         sample=self.samples.iloc[index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
         image_path=sample['image_filepath']     #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
-        social_media_label_value=self.social_media_label_map.get(sample['social-media-channel'])     #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
+        creator_label_value=self.creator_label_map.get(sample['creator'])     #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
         image=Image.open(image_path).convert('RGB')
 
         if self.transform is not None:
@@ -153,13 +149,13 @@ class ImageDataset(Dataset):
         std = torch.clamp(std, min=1e-6)  #για να μη διαιρεσει με 0
         image=(image-mean)/std
 
-        return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0,1,...6)
+        return image, creator_label_value  #επιστρεφει tuple ((3,224,224),0,1,...6)
 
 
 #δημιουργία datasets
-training_dataset=ImageDataset(train_csv,social_media_label_map,transform=transform)
-validation_dataset=ImageDataset(validation_csv,social_media_label_map,transform=transform)
-test_dataset=ImageDataset(test_csv,social_media_label_map,transform=transform)
+training_dataset=ImageDataset(train_csv,creator_label_map,transform=transform)
+validation_dataset=ImageDataset(validation_csv,creator_label_map,transform=transform)
+test_dataset=ImageDataset(test_csv,creator_label_map,transform=transform)
 
 train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
 validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
