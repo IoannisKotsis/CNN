@@ -77,7 +77,7 @@ images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:1000]:
+for i in annotations:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
