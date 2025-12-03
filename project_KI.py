@@ -192,7 +192,6 @@ print(f'Length of validation dataset',len(validation_dataset))
 print(f'Length of test dataset',len(test_dataset))
 
 
-
 print(f'Train loader size',len(train_loader))
 print(f'Validation loader size',len(validation_loader))
 print(f'Test loader size',len(test_loader))
@@ -406,7 +405,7 @@ with torch.no_grad():
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
-    conf_matrix=confusion_matrix(all_labels,all_predictions,labels=np.arange(7))
+    conf_matrix=confusion_matrix(all_labels,all_predictions,labels=np.arange(len(social_media_label_map)))
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(conf_matrix)
 
