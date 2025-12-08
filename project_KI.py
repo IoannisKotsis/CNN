@@ -18,7 +18,10 @@ import sklearn
 from sklearn.metrics import confusion_matrix
 import json
 import random
+import ast
 #from torchmetrics import ConfusionMatrix
+
+
 random.seed(18)
 
 
@@ -37,15 +40,6 @@ transform=transforms.Compose([
     transforms.ToTensor(),
     transforms.Resize((224,224))
                          ])
-
-
-# social_media_label_map={'Instagram':0,
-#                         'Pinterest':1,
-#                         'Snapchat':2,
-#                         'TikTok':3,
-#                         'YouTube':4,
-#                         'Other':5,
-#                         'Not sure':6}
 
 #$$$$$$$$$$$$$$$$-------
 
@@ -83,44 +77,39 @@ for i in annotations:
     answers = i.get('answers')
 
     relevant_value = None
-    social_media_value = None
+    creator_value = None
 
     for a in answers:
         if a.get('variable')=='is-relevant':
             relevant_value = a.get('answer')
             for b in answers:
-                if b.get('variable') == 'social-media-channel':
-                    social_media_value = b.get('answer')
+                if b.get('variable') == 'creator':
+                    creator_value = b.get('answer')
 
     rows.append({'image_filepath': str(full_path),
                  'is-relevant': relevant_value,
-                 'social-media-channel': social_media_value})       #rows= πινακας με 1 λεξικό για καθε εικόνα
+                 'creator': creator_value})       #rows= πινακας με 1 λεξικό για καθε εικόνα
 
 
 #δημιουργια dataframe από rows
 rows_df=pd.DataFrame(rows)
 yes_df=rows_df[rows_df['is-relevant']=='Yes']
-new_df=yes_df[['image_filepath','social-media-channel']]
+new_df=yes_df[['image_filepath','creator']]
 print(f'Number of relevant images:',len(new_df))
 
 
 flattened_set=set()
 
-for x in new_df['social-media-channel']:
+for x in new_df['creator']:
     if isinstance(x, list):
         flattened_set.update(x)  #αν είναι λίστα,προσθέτει κάθε στοιχείο της χωριστά στο flattened_list
     else:
         flattened_set.add(x)
 
 sorted_list=sorted(flattened_set)
-print(f'Flattened set:',flattened_set)
-print(f'Sorted list:',sorted_list)
-
-social_media_label_map={s:i for i,s in enumerate(sorted_list)}
-
-
-
-
+creator_label_map={s:i for i,s in enumerate(sorted_list)}
+print(f'sorted list: {sorted_list}')
+print(f'Label map: {creator_label_map}')
 
 
 
@@ -147,24 +136,47 @@ validation_csv='project_ki/csv_files/validation_csv.csv'
 test_csv='project_ki/csv_files/test_csv.csv'
 
 
-#κλάση δημιουργίας dataset
 
+#κλάση δημιουργίας dataset
 class ImageDataset(Dataset):
     def __init__(self,
                  csvfile,
-                 social_media_label_map,
+                 creator_label_map,
                  transform=None):
         self.transform=transform
         self.samples =pd.read_csv(csvfile)
-        self.social_media_label_map=social_media_label_map
+        self.creator_label_map=creator_label_map
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, index):
         sample=self.samples.iloc[index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
-        image_path=sample['image_filepath']     #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
-        social_media_label_value=self.social_media_label_map.get(sample['social-media-channel'])   #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
+        image_path=sample['image_filepath']  #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
+        raw_creator_value=sample['creator']
+
+        if isinstance(raw_creator_value, str):
+            raw_creator_value=raw_creator_value.strip()   #αφαιρει τυχον κενα απο το string σε αρχη και τελος
+            if raw_creator_value.startswith('[') and raw_creator_value.endswith(']'):
+                creator_labels=ast.literal_eval(raw_creator_value)  #γινεται πραγματικη python λιστα
+            else:
+                creator_labels=[raw_creator_value]
+        elif isinstance(raw_creator_value, list):
+            creator_labels=raw_creator_value
+        else:
+            creator_labels=[]
+
+        num_classes=len(self.creator_label_map)
+        creator_multi_hot_vector=torch.zeros(num_classes, dtype=torch.float32)
+
+        for lbl in creator_labels:
+            index=self.creator_label_map.get(lbl, None)
+            if index is None:
+                raise ValueError(f'!No creator label!')
+        creator_multi_hot_vector[index]=1
+
+
+        creator_label_value=self.creator_label_map.get(sample['creator'])   #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
         image=Image.open(image_path).convert('RGB')
 
         if self.transform is not None:
@@ -175,13 +187,14 @@ class ImageDataset(Dataset):
         std = torch.clamp(std, min=1e-6)  #για να μη διαιρεσει με 0
         image=(image-mean)/std
 
-        return image, social_media_label_value  #επιστρεφει tuple ((3,224,224),0,1,...6)
+        return image, creator_multi_hot_vector
+
 
 
 #δημιουργία datasets
-training_dataset=ImageDataset(train_csv,social_media_label_map,transform=transform)
-validation_dataset=ImageDataset(validation_csv,social_media_label_map,transform=transform)
-test_dataset=ImageDataset(test_csv,social_media_label_map,transform=transform)
+training_dataset=ImageDataset(train_csv, creator_label_map, transform=transform)
+validation_dataset=ImageDataset(validation_csv, creator_label_map, transform=transform)
+test_dataset=ImageDataset(test_csv, creator_label_map, transform=transform)
 
 train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
 validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
@@ -286,7 +299,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f'running on device:',device)
 
 model.to(device)
-criterion=nn.CrossEntropyLoss()
+criterion=nn.BCEWithLogitsLoss()
 optimizer=optim.Adam(model.parameters(), lr)
 
 
@@ -315,11 +328,15 @@ for epoch in range(epoch_number):
         loss.backward()
         optimizer.step()
         running_loss+=loss.item()*images.size(0)
-        preds_train=x.argmax(1)
-        train_correct+=(preds_train==labels).sum().item()
-        train_total+=images.size(0)
+        probs=torch.sigmoid(x)
+        preds_train = (probs>0.5).float()
+        train_correct = (preds_train == labels).float().sum().item()
+        train_total += labels.size(0)
+
     epoch_loss=running_loss/len(train_loader.dataset)
-    training_accuracy=(train_correct/train_total)*100
+    #training_accuracy=(train_correct/train_total)*100
+    print(f'Train correct: {train_correct}')
+    print(f'Train total: {train_total}')
 
 
 
@@ -405,9 +422,9 @@ with torch.no_grad():
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
-    conf_matrix=confusion_matrix(all_labels,all_predictions,labels=np.arange(len(social_media_label_map)))
+    #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
-    print(conf_matrix)
+    #print(conf_matrix)
 
 #plt.imshow(conf_matrix)
 #plt.show()
