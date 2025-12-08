@@ -318,10 +318,10 @@ for epoch in range(epoch_number):
     model.train()
     running_loss = 0.0
     train_total=0
-    TP_train=0
-    TN_train=0
-    FP_train = 0
-    FN_train = 0
+    TP_train=torch.zeros(len(creator_label_map),dtype=torch.long)
+    TN_train=torch.zeros(len(creator_label_map),dtype=torch.long)
+    FP_train=torch.zeros(len(creator_label_map),dtype=torch.long)
+    FN_train=torch.zeros(len(creator_label_map),dtype=torch.long)
 
     for images, labels in train_loader:
         images=images.to(device)
@@ -341,10 +341,10 @@ for epoch in range(epoch_number):
         FN_batch=((preds_train==0) & (labels==1)).sum(dim=0)
 
         train_total += labels.size(0)
-        TP_train+=TP_batch
-        TN_train+=TP_batch
-        FP_train+=TP_batch
-        FN_train+=TP_batch
+        TP_train+=TP_batch.cpu()
+        TN_train+=TN_batch.cpu()
+        FP_train+=FP_batch.cpu()
+        FN_train+=FN_batch.cpu()
 
 
     epoch_loss=running_loss/len(train_loader.dataset)
