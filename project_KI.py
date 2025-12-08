@@ -357,7 +357,7 @@ for epoch in range(epoch_number):
             probs=torch.sigmoid(x)
             preds_val = (probs>0.5).float()
             val_correct += (preds_val == labels).sum().item()
-            val_total += images.size(0)
+            val_total += labels.size(0)
 
         val_acc = (val_correct/val_total)*100
         final_val_loss = validation_loss / len(validation_loader.dataset)
@@ -421,7 +421,7 @@ with torch.no_grad():
         predictions= (probs>0.5).float()
 
         test_correct+=(predictions==labels).sum().item()
-        test_total+=images.size(0)
+        test_total+=labels.size(0)
 
 
 
