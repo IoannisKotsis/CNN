@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -316,8 +317,11 @@ wait=0
 for epoch in range(epoch_number):
     model.train()
     running_loss = 0.0
-    train_correct=0
     train_total=0
+    TP_train=0
+    TN_train=0
+    FP_train = 0
+    FN_train = 0
 
     for images, labels in train_loader:
         images=images.to(device)
@@ -330,14 +334,23 @@ for epoch in range(epoch_number):
         running_loss+=loss.item()*images.size(0)
         probs=torch.sigmoid(x)
         preds_train = (probs>0.5).float()
-        train_correct = (preds_train == labels).sum().item()
+
+        TP_batch=((preds_train==1) & (labels==1)).sum(dim=0) #μετράει τα True σε καθε στηλη
+        TN_batch=((preds_train==0) & (labels==0)).sum(dim=0)
+        FP_batch=((preds_train==1) & (labels==0)).sum(dim=0)
+        FN_batch=((preds_train==0) & (labels==1)).sum(dim=0)
+
         train_total += labels.size(0)
+        TP_train+=TP_batch
+        TN_train+=TP_batch
+        FP_train+=TP_batch
+        FN_train+=TP_batch
+
 
     epoch_loss=running_loss/len(train_loader.dataset)
     #training_accuracy=(train_correct/train_total)*100
-    print(f'Train correct: {train_correct}')
+    print(f'TP: {TP_train},TN: {TN_train},FP: {FP_train},FN: {FN_train}')
     print(f'Train total: {train_total}')
-
 
 
 #validation
