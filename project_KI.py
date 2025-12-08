@@ -369,7 +369,7 @@ for epoch in range(epoch_number):
 
 
     writer.add_scalars('Accuracy Metrics', {
-        'Training Accuracy': training_accuracy,
+        #'Training Accuracy': training_accuracy,
         'Validation Accuracy': val_acc,
     }, epoch)
 
