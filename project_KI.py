@@ -330,7 +330,7 @@ for epoch in range(epoch_number):
         running_loss+=loss.item()*images.size(0)
         probs=torch.sigmoid(x)
         preds_train = (probs>0.5).float()
-        train_correct = (preds_train == labels).float().sum().item()
+        train_correct = (preds_train == labels).sum().item()
         train_total += labels.size(0)
 
     epoch_loss=running_loss/len(train_loader.dataset)
@@ -354,12 +354,15 @@ for epoch in range(epoch_number):
             x = model(images)
             loss = criterion(x, labels)
             validation_loss+=loss.item()*images.size(0)
-            preds = x.argmax(1)
-            val_correct += (preds == labels).sum().item()
+            probs=torch.sigmoid(x)
+            preds_val = (probs>0.5).float()
+            val_correct += (preds_val == labels).sum().item()
             val_total += images.size(0)
 
         val_acc = (val_correct/val_total)*100
         final_val_loss = validation_loss / len(validation_loader.dataset)
+        print(f'Validation correct: {val_correct}')
+        print(f'Validation total: {val_total}')
 
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
@@ -414,13 +417,20 @@ with torch.no_grad():
         x=model(images)
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
-        predictions=x.argmax(1)
+        probs=torch.sigmoid(x)
+        predictions= (probs>0.5).float()
+
         test_correct+=(predictions==labels).sum().item()
         test_total+=images.size(0)
+
+
+
         all_labels.extend(labels.cpu().numpy().astype(int))
         all_predictions.extend(predictions.cpu().numpy().astype(int))
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
+    print(f'Testing correct: {test_correct}')
+    print(f'Testing total: {test_total}')
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
     print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
