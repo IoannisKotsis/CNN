@@ -420,7 +420,7 @@ with torch.no_grad():
     test_correct=0
     test_total=0
     all_labels=[]
-    all_predictions=[]
+    all_preds=[]
     TP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
     TN_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
     FP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
@@ -433,7 +433,8 @@ with torch.no_grad():
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
         probs=torch.sigmoid(x)
-        preds_testing= (probs>0.5).float()
+        preds_testing= (probs>0.5).float().cpu().numpy()
+        all_preds.extend(preds_testing.cpu().numpy().astype(int))
 
         TP_batch = ((preds_testing == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
         TN_batch = ((preds_testing == 0) & (labels == 0)).sum(dim=0)
@@ -444,17 +445,17 @@ with torch.no_grad():
         TN_testing += TN_batch.cpu()
         FP_testing += FP_batch.cpu()
         FN_testing += FN_batch.cpu()
-
+        total_creator_label = TP_testing + TN_testing + FP_testing + FN_testing
 
 
         all_labels.extend(labels.cpu().numpy().astype(int))
-        all_predictions.extend(preds_testing.cpu().numpy().astype(int))
-        total_creator_label = TP_testing + TN_testing + FP_testing + FN_testing
+
+
         testing_accuracy=(TP_testing+TN_testing)/test_total #per label accuracy
         macro_testing_accuracy=testing_accuracy.mean().item()    #συνολικο accuracy
-        testing_f1=f1_score(all_labels,preds_testing.cpu().numpy())
-        testing_recall=recall_score(all_labels,preds_testing.cpu().numpy())
-        testing_precision=precision_score(all_labels,preds_testing.cpu().numpy())
+        testing_f1=f1_score(all_labels,all_preds)
+        testing_recall=recall_score(all_labels,all_preds)
+        testing_precision=precision_score(all_labels,all_preds)
 
 
     final_test_loss=testing_loss/len(test_loader.dataset)
