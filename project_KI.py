@@ -433,8 +433,7 @@ with torch.no_grad():
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
         probs=torch.sigmoid(x)
-        preds_testing= (probs>0.5).float().cpu().numpy()
-        all_preds.extend(preds_testing)
+        preds_testing = (probs > 0.5)
 
         TP_batch = ((preds_testing == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
         TN_batch = ((preds_testing == 0) & (labels == 0)).sum(dim=0)
@@ -447,7 +446,8 @@ with torch.no_grad():
         FN_testing += FN_batch.cpu()
         total_creator_label = TP_testing + TN_testing + FP_testing + FN_testing
 
-
+        preds_testing = (probs > 0.5).float().cpu().numpy()
+        all_preds.extend(preds_testing)
         all_labels.extend(labels.cpu().numpy().astype(int))
 
 
