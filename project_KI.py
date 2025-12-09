@@ -318,10 +318,7 @@ for epoch in range(epoch_number):
     model.train()
     running_loss = 0.0
     train_total=0
-    TP_train=torch.zeros(len(creator_label_map),dtype=torch.long)
-    TN_train=torch.zeros(len(creator_label_map),dtype=torch.long)
-    FP_train=torch.zeros(len(creator_label_map),dtype=torch.long)
-    FN_train=torch.zeros(len(creator_label_map),dtype=torch.long)
+
 
     for images, labels in train_loader:
         images=images.to(device)
@@ -332,25 +329,12 @@ for epoch in range(epoch_number):
         loss.backward()
         optimizer.step()
         running_loss+=loss.item()*images.size(0)
-        probs=torch.sigmoid(x)
-        preds_train = (probs>0.5).float()
-
-        TP_batch=((preds_train==1) & (labels==1)).sum(dim=0) #μετράει τα True σε καθε στηλη
-        TN_batch=((preds_train==0) & (labels==0)).sum(dim=0)
-        FP_batch=((preds_train==1) & (labels==0)).sum(dim=0)
-        FN_batch=((preds_train==0) & (labels==1)).sum(dim=0)
 
         train_total += labels.size(0)
-        TP_train+=TP_batch.cpu()
-        TN_train+=TN_batch.cpu()
-        FP_train+=FP_batch.cpu()
-        FN_train+=FN_batch.cpu()
-
 
     epoch_loss=running_loss/len(train_loader.dataset)
     #training_accuracy=(train_correct/train_total)*100
-    print(f'TP: {TP_train},TN: {TN_train},FP: {FP_train},FN: {FN_train}')
-    print(f'Train total: {train_total}')
+    print(f'Training loss: {epoch_loss}')
 
 
 #validation
@@ -360,6 +344,10 @@ for epoch in range(epoch_number):
         validation_loss = 0.0
         val_correct = 0
         val_total = 0
+        TP_val = torch.zeros(len(creator_label_map), dtype=torch.long)
+        TN_val = torch.zeros(len(creator_label_map), dtype=torch.long)
+        FP_val = torch.zeros(len(creator_label_map), dtype=torch.long)
+        FN_val = torch.zeros(len(creator_label_map), dtype=torch.long)
 
         for images, labels in validation_loader:
             images=images.to(device)
@@ -367,15 +355,29 @@ for epoch in range(epoch_number):
             x = model(images)
             loss = criterion(x, labels)
             validation_loss+=loss.item()*images.size(0)
-            probs=torch.sigmoid(x)
+            probs=torch.sigmoid(x)    #κανει τα logits->πιθανοτητες
             preds_val = (probs>0.5).float()
-            val_correct += (preds_val == labels).sum().item()
-            val_total += labels.size(0)
 
-        val_acc = (val_correct/val_total)*100
+            TP_batch = ((preds_val == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
+            TN_batch = ((preds_val == 0) & (labels == 0)).sum(dim=0)
+            FP_batch = ((preds_val == 1) & (labels == 0)).sum(dim=0)
+            FN_batch = ((preds_val == 0) & (labels == 1)).sum(dim=0)
+
+            TP_val += TP_batch.cpu()
+            TN_val += TN_batch.cpu()
+            FP_val += FP_batch.cpu()
+            FN_val += FN_batch.cpu()
+
         final_val_loss = validation_loss / len(validation_loader.dataset)
-        print(f'Validation correct: {val_correct}')
-        print(f'Validation total: {val_total}')
+        total_creator_label=TP_val+TN_val+FP_val+FN_val
+        validation_accuracy=(TP_val+TN_val)/total_creator_label
+
+
+    print(f'Validation correct: {val_correct}')
+    print(f'Validation total: {val_total}')
+    print(f'TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
+    print(f'Total creator label: {total_creator_label}')
+    print(f'Validation accuracy: {validation_accuracy}')
 
 
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
@@ -383,7 +385,7 @@ for epoch in range(epoch_number):
 
     writer.add_scalars('Accuracy Metrics', {
         #'Training Accuracy': training_accuracy,
-        'Validation Accuracy': val_acc,
+        'Validation Accuracy': validation_accuracy,
     }, epoch)
 
     writer.add_scalars('Loss Curves', {
