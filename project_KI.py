@@ -451,7 +451,7 @@ with torch.no_grad():
         all_labels.extend(labels.cpu().numpy().astype(int))
 
 
-        testing_accuracy=(TP_testing+TN_testing)/test_total #per label accuracy
+        testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
         macro_testing_accuracy=testing_accuracy.mean().item()    #συνολικο accuracy
         testing_f1=f1_score(all_labels,all_preds,average=None)
         testing_recall=recall_score(all_labels,all_preds,average=None)
@@ -461,6 +461,7 @@ with torch.no_grad():
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
+    print(f'TP: {TP_testing},TN: {TN_testing}, FP: {FP_testing}, FN: {FN_testing}')
     print(f'->Testing Accuracy: \n {macro_testing_accuracy:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     #print(conf_matrix)
     print(f'F1 score: {testing_f1}')
