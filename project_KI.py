@@ -448,13 +448,13 @@ with torch.no_grad():
 
 
         all_labels.extend(labels.cpu().numpy().astype(int))
-        #all_predictions.extend(predictions.cpu().numpy().astype(int))
+        all_predictions.extend(preds_testing.cpu().numpy().astype(int))
         total_creator_label = TP_testing + TN_testing + FP_testing + FN_testing
         testing_accuracy=(TP_testing+TN_testing)/test_total #per label accuracy
         macro_testing_accuracy=testing_accuracy.mean().item()    #συνολικο accuracy
-        testing_f1=f1_score(labels,preds_testing)
-        testing_recall=recall_score(labels,preds_testing)
-        testing_precision=precision_score(labels,preds_testing)
+        testing_f1=f1_score(all_labels,preds_testing.cpu().numpy())
+        testing_recall=recall_score(all_labels,preds_testing.cpu().numpy())
+        testing_precision=precision_score(all_labels,preds_testing.cpu().numpy())
 
 
     final_test_loss=testing_loss/len(test_loader.dataset)
