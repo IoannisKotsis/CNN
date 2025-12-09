@@ -372,9 +372,6 @@ for epoch in range(epoch_number):
         total_creator_label=TP_val+TN_val+FP_val+FN_val
         validation_accuracy=(TP_val+TN_val)/total_creator_label
 
-
-    print(f'Validation correct: {val_correct}')
-    print(f'Validation total: {val_total}')
     print(f'TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
     print(f'Total creator label: {total_creator_label}')
     print(f'Validation accuracy: {validation_accuracy}')
@@ -383,10 +380,10 @@ for epoch in range(epoch_number):
     #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
 
 
-    writer.add_scalars('Accuracy Metrics', {
-        #'Training Accuracy': training_accuracy,
-        'Validation Accuracy': validation_accuracy,
-    }, epoch)
+    # writer.add_scalars('Accuracy Metrics', {
+    #     #'Training Accuracy': training_accuracy,
+    #     'Validation Accuracy': validation_accuracy,
+    # }, epoch)
 
     writer.add_scalars('Loss Curves', {
         'Training Loss': epoch_loss,
