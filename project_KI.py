@@ -372,18 +372,17 @@ for epoch in range(epoch_number):
         total_creator_label=TP_val+TN_val+FP_val+FN_val
         validation_accuracy=(TP_val+TN_val)/total_creator_label
 
-    print(f'TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
-    print(f'Total creator label: {total_creator_label}')
-    print(f'Validation accuracy: {validation_accuracy}')
+        macro_validation_accuracy=validation_accuracy.mean().item()
 
 
-    #print(f'--Epoch {epoch+1} has loss: {epoch_loss:.6f} \n  Validation Loss {epoch+1}: {final_val_loss:.6f} \n  Validation Accuracy: {val_acc:.2f}%')
+    #print(f'TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
+    #print(f'Total creator label: {total_creator_label}')
+    #print(f'Validation accuracy: {validation_accuracy}')
 
 
-    # writer.add_scalars('Accuracy Metrics', {
-    #     #'Training Accuracy': training_accuracy,
-    #     'Validation Accuracy': validation_accuracy,
-    # }, epoch)
+    writer.add_scalars('Accuracy Metrics', {
+         'Validation Accuracy': macro_validation_accuracy,
+     }, epoch)
 
     writer.add_scalars('Loss Curves', {
         'Training Loss': epoch_loss,
@@ -422,6 +421,10 @@ with torch.no_grad():
     test_total=0
     all_labels=[]
     all_predictions=[]
+    TP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
+    TN_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
+    FP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
+    FN_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
 
     for images, labels in test_loader:
         images=images.to(device)
@@ -432,6 +435,16 @@ with torch.no_grad():
         probs=torch.sigmoid(x)
         predictions= (probs>0.5).float()
 
+        TP_batch = ((preds_val == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
+        TN_batch = ((preds_val == 0) & (labels == 0)).sum(dim=0)
+        FP_batch = ((preds_val == 1) & (labels == 0)).sum(dim=0)
+        FN_batch = ((preds_val == 0) & (labels == 1)).sum(dim=0)
+
+        TP_testing += TP_batch.cpu()
+        TN_testing += TN_batch.cpu()
+        FP_testing += FP_batch.cpu()
+        FN_testing += FN_batch.cpu()
+
         test_correct+=(predictions==labels).sum().item()
         test_total+=labels.size(0)
 
@@ -439,13 +452,15 @@ with torch.no_grad():
 
         all_labels.extend(labels.cpu().numpy().astype(int))
         all_predictions.extend(predictions.cpu().numpy().astype(int))
+        total_creator_label = TP_testing + TN_testing + FP_testing + FN_testing
+        testing_accuracy=(TP_testing+TN_testing)/test_total
+
+
     test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
-    print(f'Testing correct: {test_correct}')
-    print(f'Testing total: {test_total}')
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
-    print(f'->Testing Accuracy: \n {test_acc:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
+    print(f'->Testing Accuracy: \n {testing_accuracy:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     #print(conf_matrix)
 
 #plt.imshow(conf_matrix)
