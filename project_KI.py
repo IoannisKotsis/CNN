@@ -434,7 +434,7 @@ with torch.no_grad():
         testing_loss+=loss.item()*images.size(0)
         probs=torch.sigmoid(x)
         preds_testing= (probs>0.5).float().cpu().numpy()
-        all_preds.extend(preds_testing.cpu().numpy().astype(int))
+        all_preds.extend(preds_testing)
 
         TP_batch = ((preds_testing == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
         TN_batch = ((preds_testing == 0) & (labels == 0)).sum(dim=0)
