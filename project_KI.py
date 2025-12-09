@@ -16,7 +16,7 @@ import datetime
 from pathlib import Path
 from math import prod
 import sklearn
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score, recall_score, precision_score
 import json
 import random
 import ast
@@ -433,35 +433,38 @@ with torch.no_grad():
         loss=criterion(x, labels)
         testing_loss+=loss.item()*images.size(0)
         probs=torch.sigmoid(x)
-        predictions= (probs>0.5).float()
+        preds_testing= (probs>0.5).float()
 
-        TP_batch = ((preds_val == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
-        TN_batch = ((preds_val == 0) & (labels == 0)).sum(dim=0)
-        FP_batch = ((preds_val == 1) & (labels == 0)).sum(dim=0)
-        FN_batch = ((preds_val == 0) & (labels == 1)).sum(dim=0)
+        TP_batch = ((preds_testing == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
+        TN_batch = ((preds_testing == 0) & (labels == 0)).sum(dim=0)
+        FP_batch = ((preds_testing == 1) & (labels == 0)).sum(dim=0)
+        FN_batch = ((preds_testing == 0) & (labels == 1)).sum(dim=0)
 
         TP_testing += TP_batch.cpu()
         TN_testing += TN_batch.cpu()
         FP_testing += FP_batch.cpu()
         FN_testing += FN_batch.cpu()
 
-        test_correct+=(predictions==labels).sum().item()
-        test_total+=labels.size(0)
-
 
 
         all_labels.extend(labels.cpu().numpy().astype(int))
-        all_predictions.extend(predictions.cpu().numpy().astype(int))
+        #all_predictions.extend(predictions.cpu().numpy().astype(int))
         total_creator_label = TP_testing + TN_testing + FP_testing + FN_testing
-        testing_accuracy=(TP_testing+TN_testing)/test_total
+        testing_accuracy=(TP_testing+TN_testing)/test_total #per label accuracy
+        macro_testing_accuracy=testing_accuracy.mean().item()    #συνολικο accuracy
+        testing_f1=f1_score(labels,preds_testing)
+        testing_recall=recall_score(labels,preds_testing)
+        testing_precision=precision_score(labels,preds_testing)
 
 
-    test_acc=(test_correct/test_total)*100
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
-    print(f'->Testing Accuracy: \n {testing_accuracy:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
+    print(f'->Testing Accuracy: \n {macro_testing_accuracy:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     #print(conf_matrix)
+    print(f'F1 score: {testing_f1}')
+    print(f'Recall score: {testing_recall}')
+    print(f'Precision score: {testing_precision}')
 
 #plt.imshow(conf_matrix)
 #plt.show()
