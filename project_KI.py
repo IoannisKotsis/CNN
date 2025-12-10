@@ -9,6 +9,7 @@ import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+from torchgen.packaged.autograd.load_derivatives import create_forward_derivative
 from torchvision import datasets, transforms
 import os
 from torch.utils.tensorboard import SummaryWriter
@@ -104,31 +105,26 @@ new_df=yes_df[['image_filepath','social-media-channel','creator']]
 print(f'Number of relevant images:',len(new_df))
 
 
-flattened_set=set()
+#εντοπισμος unique labels και δημιουργια label maps
+social_media_channel_set=set()
+for y in new_df['social-media-channel']:
+    social_media_channel_set.add(y)
+
+creator_flattened_set=set()
 for x in new_df['creator']:
     if isinstance(x, list):
-        flattened_set.update(x)  #αν είναι λίστα,προσθέτει κάθε στοιχείο της χωριστά στο flattened_list
+        creator_flattened_set.update(x)  #αν είναι λίστα,προσθέτει κάθε στοιχείο της χωριστά στο flattened_list
     else:
-        flattened_set.add(x)
+        creator_flattened_set.add(x)
 
-flattened_set1=set()
-for y in new_df['social-media-channel']:
-    flattened_set1.add(y)
-
-sorted_list1=sorted(flattened_set1)
-sorted_list=sorted(flattened_set)
-
+sorted_list1=sorted(social_media_channel_set)
+sorted_list2=sorted(creator_flattened_set)
 
 social_media_channel_label_map={s:i for i,s in enumerate(sorted_list1)}
-creator_label_map={s:i for i,s in enumerate(sorted_list)}
+creator_label_map={s:i for i,s in enumerate(sorted_list2)}
 
-
-print(f'sorted list1: {sorted_list1}')
-print(f'Label map1: {social_media_channel_label_map}')
-print(f'sorted list2: {sorted_list}')
-print(f'Label map2: {creator_label_map}')
-
-
+print(f'Social media label map: \n {social_media_channel_label_map}')
+print(f'Creator label map: \n {creator_label_map}')
 
 
 
@@ -158,19 +154,22 @@ test_csv='project_ki/csv_files/test_csv.csv'
 class ImageDataset(Dataset):
     def __init__(self,
                  csvfile,
+                 social_media_channel_label_map,
                  creator_label_map,
                  transform=None):
         self.transform=transform
         self.samples =pd.read_csv(csvfile)
         self.creator_label_map=creator_label_map
+        self.social_media_channel_label_map = social_media_channel_label_map
 
     def __len__(self):
         return len(self.samples)
 
-    def __getitem__(self, index):
-        sample=self.samples.iloc[index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
+    def __getitem__(self, creator_index):
+        sample=self.samples.iloc[creator_index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
         image_path=sample['image_filepath']  #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
         raw_creator_value=sample['creator']
+        social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'],None)
 
         if isinstance(raw_creator_value, str):
             raw_creator_value=raw_creator_value.strip()   #αφαιρει τυχον κενα απο το string σε αρχη και τελος
@@ -187,13 +186,11 @@ class ImageDataset(Dataset):
         creator_multi_hot_vector=torch.zeros(num_classes, dtype=torch.float32)
 
         for lbl in creator_labels:
-            index=self.creator_label_map.get(lbl, None)
-            if index is None:
+            creator_index=self.creator_label_map.get(lbl, None)
+            if creator_index is None:
                 raise ValueError(f'!No creator label!')
-        creator_multi_hot_vector[index]=1
+            creator_multi_hot_vector[creator_index]=1
 
-
-        creator_label_value=self.creator_label_map.get(sample['creator'])   #αναζητηση της τιμης που αντιστοιχει στο συγκ. κλειδι μέσα στο label map, αν δεν βρει κατι βαζει 0
         image=Image.open(image_path).convert('RGB')
 
         if self.transform is not None:
@@ -204,14 +201,14 @@ class ImageDataset(Dataset):
         std = torch.clamp(std, min=1e-6)  #για να μη διαιρεσει με 0
         image=(image-mean)/std
 
-        return image, creator_multi_hot_vector
+        return image, social_media_channel_label_value ,creator_multi_hot_vector
 
 
 
 #δημιουργία datasets
-training_dataset=ImageDataset(train_csv, creator_label_map, transform=transform)
-validation_dataset=ImageDataset(validation_csv, creator_label_map, transform=transform)
-test_dataset=ImageDataset(test_csv, creator_label_map, transform=transform)
+training_dataset=ImageDataset(train_csv,social_media_channel_label_map, creator_label_map, transform=transform)
+validation_dataset=ImageDataset(validation_csv,social_media_channel_label_map, creator_label_map, transform=transform)
+test_dataset=ImageDataset(test_csv,social_media_channel_label_map, creator_label_map, transform=transform)
 
 train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
 validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
@@ -316,7 +313,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f'running on device:',device)
 
 model.to(device)
-criterion=nn.BCEWithLogitsLoss()
+criterion_single_label=nn.CrossEntropyLoss()
+criterion_multi_label=nn.BCEWithLogitsLoss()
 optimizer=optim.Adam(model.parameters(), lr)
 
 
@@ -332,7 +330,7 @@ wait=0
 #training
 for epoch in range(epoch_number):
     model.train()
-    running_loss = 0.0
+    running_loss=0.0
     train_total=0
 
 
@@ -341,15 +339,17 @@ for epoch in range(epoch_number):
         labels=labels.to(device)
         optimizer.zero_grad()
         x=model(images)
-        loss=criterion(x, labels)
+        loss1=criterion_single_label(x,labels)
+        loss2=criterion_multi_label(x, labels)
+        loss=loss1+loss2
         loss.backward()
         optimizer.step()
-        running_loss+=loss.item()*images.size(0)
+        running_loss+= loss.item() * images.size(0)
 
         train_total += labels.size(0)
 
-    epoch_loss=running_loss/len(train_loader.dataset)
-    #print(f'Training loss: {epoch_loss}')
+    epoch_loss= running_loss / len(train_loader.dataset)
+    print(f'Training loss: {epoch_loss}')
 
 
 #validation
@@ -368,8 +368,10 @@ for epoch in range(epoch_number):
             images=images.to(device)
             labels=labels.to(device)
             x = model(images)
-            loss = criterion(x, labels)
-            validation_loss+=loss.item()*images.size(0)
+            loss1=criterion_single_label(x,labels)
+            loss2 = criterion_multi_label(x,labels)
+            loss=loss1+loss2
+            validation_loss+= loss.item() * images.size(0)
             probs=torch.sigmoid(x)    #κανει τα logits->πιθανοτητες
             preds_val = (probs>0.5).float()
 
@@ -445,8 +447,10 @@ with torch.no_grad():
         images=images.to(device)
         labels=labels.to(device)
         x=model(images)
-        loss=criterion(x, labels)
-        testing_loss+=loss.item()*images.size(0)
+        loss1=criterion_single_label(x,labels)
+        loss2=criterion_multi_label(x, labels)
+        loss=loss1+loss2
+        testing_loss+= loss.item() * images.size(0)
         probs=torch.sigmoid(x)
         preds_testing = (probs > 0.5)
 
@@ -477,7 +481,7 @@ with torch.no_grad():
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
     print(f'TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
-    print(f'->Testing Accuracy: \n {macro_testing_accuracy:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
+    print(f'->Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     #print(conf_matrix)
     print(f'F1 score: {testing_f1}')
     print(f'Recall score: {testing_recall}')
