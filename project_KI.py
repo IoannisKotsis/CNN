@@ -72,7 +72,7 @@ images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations[:3000]:
+for i in annotations:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
@@ -113,7 +113,7 @@ for x in new_df['creator']:
 
 flattened_set1=set()
 for y in new_df['social-media-channel']:
-    flattened_set1.update(y)
+    flattened_set1.add(y)
 
 sorted_list1=sorted(flattened_set1)
 sorted_list=sorted(flattened_set)
