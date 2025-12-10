@@ -341,9 +341,9 @@ for epoch in range(epoch_number):
         social_media_channel_labels=social_media_channel_labels.to(device)
         creator_labels=creator_labels.to(device)
         optimizer.zero_grad()
-        x=model(images)
-        loss1=criterion_single_label(x,social_media_channel_labels)
-        loss2=criterion_multi_label(x,creator_labels)
+        social_media_channel_logits, creator_logits=model(images)
+        loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
+        loss2=criterion_multi_label(creator_logits,creator_labels)
         loss=loss1+loss2
         loss.backward()
         optimizer.step()
@@ -371,9 +371,9 @@ for epoch in range(epoch_number):
             images=images.to(device)
             social_media_channel_labels = social_media_channel_labels.to(device)
             creator_labels = creator_labels.to(device)
-            x = model(images)
-            loss1=criterion_single_label(x,social_media_channel_labels)
-            loss2 = criterion_multi_label(x, creator_labels)
+            social_media_channel_logits, creator_logits= model(images)
+            loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
+            loss2 = criterion_multi_label(creator_logits, creator_labels)
             loss=loss1+loss2
             validation_loss+= loss.item() * images.size(0)
             probs=torch.sigmoid(x)    #κανει τα logits->πιθανοτητες
@@ -451,9 +451,9 @@ with torch.no_grad():
         images=images.to(device)
         social_media_channel_labels = social_media_channel_labels.to(device)
         creator_labels = creator_labels.to(device)
-        x=model(images)
-        loss1=criterion_single_label(x,social_media_channel_labels)
-        loss2=criterion_multi_label(x, creator_labels)
+        social_media_channel_logits, creator_logits=model(images)
+        loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
+        loss2=criterion_multi_label(creator_logits, creator_labels)
         loss=loss1+loss2
         testing_loss+= loss.item() * images.size(0)
         probs=torch.sigmoid(x)
