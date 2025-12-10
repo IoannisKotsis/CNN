@@ -376,7 +376,7 @@ for epoch in range(epoch_number):
             loss2 = criterion_multi_label(creator_logits, creator_labels)
             loss=loss1+loss2
             validation_loss+= loss.item() * images.size(0)
-            probs=torch.sigmoid(x)    #κανει τα logits->πιθανοτητες
+            probs=torch.sigmoid(creator_logits)    #κανει τα logits->πιθανοτητες
             preds_val = (probs>0.5).float()
 
             TP_batch = ((preds_val == 1) & (creator_labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
@@ -456,7 +456,7 @@ with torch.no_grad():
         loss2=criterion_multi_label(creator_logits, creator_labels)
         loss=loss1+loss2
         testing_loss+= loss.item() * images.size(0)
-        probs=torch.sigmoid(x)
+        probs=torch.sigmoid(creator_logits)
         preds_testing = (probs > 0.5)
 
         TP_batch = ((preds_testing == 1) & (creator_labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
