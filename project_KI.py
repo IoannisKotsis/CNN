@@ -333,13 +333,14 @@ for epoch in range(epoch_number):
     train_total=0
 
 
-    for images, labels in train_loader:
+    for images, social_media_channel_labels, creator_labels in train_loader:
         images=images.to(device)
-        labels=labels.to(device)
+        social_media_channel_labels=social_media_channel_labels.to(device)
+        creator_labels=creator_labels.to(device)
         optimizer.zero_grad()
         x=model(images)
-        loss1=criterion_single_label(x,labels)
-        loss2=criterion_multi_label(x, labels)
+        loss1=criterion_single_label(x,social_media_channel_labels)
+        loss2=criterion_multi_label(x,creator_labels)
         loss=loss1+loss2
         loss.backward()
         optimizer.step()
@@ -363,21 +364,22 @@ for epoch in range(epoch_number):
         FP_val = torch.zeros(len(creator_label_map), dtype=torch.long)
         FN_val = torch.zeros(len(creator_label_map), dtype=torch.long)
 
-        for images, labels in validation_loader:
+        for images, social_media_channel_labels, creator_labels in validation_loader:
             images=images.to(device)
-            labels=labels.to(device)
+            social_media_channel_labels = social_media_channel_labels.to(device)
+            creator_labels = creator_labels.to(device)
             x = model(images)
-            loss1=criterion_single_label(x,labels)
-            loss2 = criterion_multi_label(x,labels)
+            loss1=criterion_single_label(x,social_media_channel_labels)
+            loss2 = criterion_multi_label(x, creator_labels)
             loss=loss1+loss2
             validation_loss+= loss.item() * images.size(0)
             probs=torch.sigmoid(x)    #κανει τα logits->πιθανοτητες
             preds_val = (probs>0.5).float()
 
-            TP_batch = ((preds_val == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
-            TN_batch = ((preds_val == 0) & (labels == 0)).sum(dim=0)
-            FP_batch = ((preds_val == 1) & (labels == 0)).sum(dim=0)
-            FN_batch = ((preds_val == 0) & (labels == 1)).sum(dim=0)
+            TP_batch = ((preds_val == 1) & (creator_labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
+            TN_batch = ((preds_val == 0) & (creator_labels == 0)).sum(dim=0)
+            FP_batch = ((preds_val == 1) & (creator_labels == 0)).sum(dim=0)
+            FN_batch = ((preds_val == 0) & (creator_labels == 1)).sum(dim=0)
 
             TP_val += TP_batch.cpu()
             TN_val += TN_batch.cpu()
@@ -442,21 +444,22 @@ with torch.no_grad():
     FP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
     FN_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
 
-    for images, labels in test_loader:
+    for images, social_media_channel_labels, creator_labels in test_loader:
         images=images.to(device)
-        labels=labels.to(device)
+        social_media_channel_labels = social_media_channel_labels.to(device)
+        creator_labels = creator_labels.to(device)
         x=model(images)
-        loss1=criterion_single_label(x,labels)
-        loss2=criterion_multi_label(x, labels)
+        loss1=criterion_single_label(x,social_media_channel_labels)
+        loss2=criterion_multi_label(x, creator_labels)
         loss=loss1+loss2
         testing_loss+= loss.item() * images.size(0)
         probs=torch.sigmoid(x)
         preds_testing = (probs > 0.5)
 
-        TP_batch = ((preds_testing == 1) & (labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
-        TN_batch = ((preds_testing == 0) & (labels == 0)).sum(dim=0)
-        FP_batch = ((preds_testing == 1) & (labels == 0)).sum(dim=0)
-        FN_batch = ((preds_testing == 0) & (labels == 1)).sum(dim=0)
+        TP_batch = ((preds_testing == 1) & (creator_labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
+        TN_batch = ((preds_testing == 0) & (creator_labels == 0)).sum(dim=0)
+        FP_batch = ((preds_testing == 1) & (creator_labels == 0)).sum(dim=0)
+        FN_batch = ((preds_testing == 0) & (creator_labels == 1)).sum(dim=0)
 
         TP_testing += TP_batch.cpu()
         TN_testing += TN_batch.cpu()
@@ -466,7 +469,7 @@ with torch.no_grad():
 
 
         all_preds.extend(preds_testing.cpu().numpy().astype(int))
-        all_labels.extend(labels.cpu().numpy().astype(int))
+        all_labels.extend(creator_labels.cpu().numpy().astype(int))
 
 
         testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
