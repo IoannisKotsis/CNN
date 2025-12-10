@@ -72,12 +72,13 @@ images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 rows=[]
 #επιλογη των paths και των values που θελω
-for i in annotations:
+for i in annotations[:3000]:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
     answers = i.get('answers')
 
     relevant_value = None
+    social_media_channel_value = None
     creator_value = None
 
     for a in answers:
@@ -86,31 +87,46 @@ for i in annotations:
             for b in answers:
                 if b.get('variable') == 'creator':
                     creator_value = b.get('answer')
+                elif b.get('variable') == 'social-media-channel':
+                    social_media_channel_value = b.get('answer')
+
 
     rows.append({'image_filepath': str(full_path),
                  'is-relevant': relevant_value,
+                 'social-media-channel': social_media_channel_value,
                  'creator': creator_value})       #rows= πινακας με 1 λεξικό για καθε εικόνα
 
 
 #δημιουργια dataframe από rows
 rows_df=pd.DataFrame(rows)
 yes_df=rows_df[rows_df['is-relevant']=='Yes']
-new_df=yes_df[['image_filepath','creator']]
+new_df=yes_df[['image_filepath','social-media-channel','creator']]
 print(f'Number of relevant images:',len(new_df))
 
 
 flattened_set=set()
-
 for x in new_df['creator']:
     if isinstance(x, list):
         flattened_set.update(x)  #αν είναι λίστα,προσθέτει κάθε στοιχείο της χωριστά στο flattened_list
     else:
         flattened_set.add(x)
 
+flattened_set1=set()
+for y in new_df['social-media-channel']:
+    flattened_set1.update(y)
+
+sorted_list1=sorted(flattened_set1)
 sorted_list=sorted(flattened_set)
+
+
+social_media_channel_label_map={s:i for i,s in enumerate(sorted_list1)}
 creator_label_map={s:i for i,s in enumerate(sorted_list)}
-print(f'sorted list: {sorted_list}')
-print(f'Label map: {creator_label_map}')
+
+
+print(f'sorted list1: {sorted_list1}')
+print(f'Label map1: {social_media_channel_label_map}')
+print(f'sorted list2: {sorted_list}')
+print(f'Label map2: {creator_label_map}')
 
 
 
@@ -333,8 +349,7 @@ for epoch in range(epoch_number):
         train_total += labels.size(0)
 
     epoch_loss=running_loss/len(train_loader.dataset)
-    #training_accuracy=(train_correct/train_total)*100
-    print(f'Training loss: {epoch_loss}')
+    #print(f'Training loss: {epoch_loss}')
 
 
 #validation
@@ -461,7 +476,7 @@ with torch.no_grad():
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
-    print(f'TP: {TP_testing},TN: {TN_testing}, FP: {FP_testing}, FN: {FN_testing}')
+    print(f'TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
     print(f'->Testing Accuracy: \n {macro_testing_accuracy:.2f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     #print(conf_matrix)
     print(f'F1 score: {testing_f1}')
