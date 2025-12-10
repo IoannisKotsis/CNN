@@ -274,7 +274,8 @@ class ConvBlock(nn.Module):
 class Network(nn.Module):
     def __init__(self,
                  input_dims,
-                 output_dims,
+                 output_dims_single_label,
+                 output_dims_multi_label,
                  linear1_output_size=50,
                  linear2_output_size=50
                  ):
@@ -289,7 +290,8 @@ class Network(nn.Module):
         self.dropout=nn.Dropout(0.2)
         self.fc1=nn.Linear(prod(self.block3.output_dims()) , linear1_output_size)
         self.fc2 = nn.Linear(linear1_output_size, linear2_output_size)
-        self.output_layer = nn.Linear(linear2_output_size, output_dims)
+        self.output_layer1 = nn.Linear(linear2_output_size, output_dims_single_label)
+        self.output_layer2 = nn.Linear(linear2_output_size, output_dims_multi_label)
 
 
     def forward(self, x):
@@ -300,12 +302,13 @@ class Network(nn.Module):
         x=self.gelu(self.fc1(x))
         x=self.gelu(self.fc2(x))
         x=self.dropout(x)
-        x=self.output_layer(x)
-        return x
+        single_label_head=self.output_layer1(x)
+        multi_label_head= self.output_layer2(x)
+        return single_label_head, multi_label_head
 
-
-
-model=Network(input_dims=(224,224,3),output_dims=len(creator_label_map))
+num_classes_singlelabel=len(social_media_channel_label_map)
+num_classes_multilabel=len(creator_label_map)
+model=Network(input_dims=(224,224,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel)
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -346,7 +349,7 @@ for epoch in range(epoch_number):
         optimizer.step()
         running_loss+= loss.item() * images.size(0)
 
-        train_total += labels.size(0)
+        #train_total += labels.size(0)
 
     epoch_loss= running_loss / len(train_loader.dataset)
     print(f'Training loss: {epoch_loss}')
