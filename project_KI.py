@@ -358,9 +358,9 @@ for epoch in range(epoch_number):
 
     epoch_loss= running_loss / len(train_loader.dataset)
     single_label_training_accuracy= (social_media_channel_train_correct / social_media_channel_train_total) * 100
-    print('Training metrics: (below)')
-    print(f'Single-label training accuracy: {single_label_training_accuracy:.3f}%')
-    print(f'Training loss: {epoch_loss:.3f}')
+    #print('Training metrics: (below)')
+    #print(f'Single-label training accuracy: {single_label_training_accuracy:.3f}%')
+    #print(f'Training loss: {epoch_loss:.3f}')
 
 
 #validation
@@ -410,10 +410,10 @@ for epoch in range(epoch_number):
         macro_validation_accuracy=multi_label_validation_accuracy.mean().item()
         single_label_validation_accuracy=(social_media_channel_val_correct/social_media_channel_val_total)*100
 
-    print('Validation metrics: (below)')
+    #print('Validation metrics: (below)')
     #print(f'Multi-label \n TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
-    print(f'Single-label Validation accuracy: \n {single_label_validation_accuracy:.3f}%')
-    print(f'Multi-label Validation accuracy: \n {macro_validation_accuracy:.3f}%')
+    #print(f'Single-label Validation accuracy: \n {single_label_validation_accuracy:.3f}%')
+    #print(f'Multi-label Validation accuracy: \n {macro_validation_accuracy:.3f}%')
 
 
     writer.add_scalars('Accuracy Metrics', {
