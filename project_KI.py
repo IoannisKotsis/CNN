@@ -24,7 +24,7 @@ import ast
 #from torchmetrics import ConfusionMatrix
 
 
-random.seed(18)
+random.seed(25)
 
 
 #$$$$$$$$$$$$$-----
@@ -358,6 +358,7 @@ for epoch in range(epoch_number):
 
     epoch_loss= running_loss / len(train_loader.dataset)
     single_label_training_accuracy= (social_media_channel_train_correct / social_media_channel_train_total) * 100
+    print('Training metrics: (below)')
     print(f'Single-label training accuracy: {single_label_training_accuracy}')
     print(f'Training loss: {epoch_loss}')
 
@@ -409,9 +410,10 @@ for epoch in range(epoch_number):
         macro_validation_accuracy=multi_label_validation_accuracy.mean().item()
         single_label_validation_accuracy=(social_media_channel_val_correct/social_media_channel_val_total)*100
 
-    print(f'Multi-label \n TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
-    print(f'Single-label Validation accuracy: {single_label_validation_accuracy}')
-    print(f'Multi-label Validation accuracy: {multi_label_validation_accuracy}')
+    print('Validation metrics: (below)')
+    #print(f'Multi-label \n TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
+    print(f'Single-label Validation accuracy: \n {single_label_validation_accuracy:.3f}%')
+    print(f'Multi-label Validation accuracy: \n {multi_label_validation_accuracy:.3f}%')
 
 
     writer.add_scalars('Accuracy Metrics', {
@@ -500,13 +502,12 @@ with torch.no_grad():
     testing_precision=precision_score(all_labels,all_preds,average=None, zero_division=0)
     single_label_testing_accuracy = (social_media_channel_val_correct / social_media_channel_val_total) * 100
 
-
-
+    print('Testing metrics: (below)')
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
     print(f'Multi-label \n TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
-    print(f'Single-label Testing accuracy: {single_label_testing_accuracy}')
+    print(f'->Single-label Testing accuracy: \n{single_label_testing_accuracy:.3f}%')
     print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     #print(conf_matrix)
     print(f'F1 score: {testing_f1}')
