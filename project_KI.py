@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import label_binarize
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
@@ -333,7 +334,8 @@ wait=0
 for epoch in range(epoch_number):
     model.train()
     running_loss=0.0
-    train_total=0
+    social_media_channel_train_correct=0
+    social_media_channel_train_total=0
 
 
     for images, social_media_channel_labels, creator_labels in train_loader:
@@ -349,9 +351,14 @@ for epoch in range(epoch_number):
         optimizer.step()
         running_loss+= loss.item() * images.size(0)
 
-        #train_total += labels.size(0)
+        social_media_channel_preds=social_media_channel_logits.argmax(1)
+        social_media_channel_train_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
+        social_media_channel_train_total += images.size(0)
+
 
     epoch_loss= running_loss / len(train_loader.dataset)
+    single_label_training_accuracy= (social_media_channel_train_correct / social_media_channel_train_total) * 100
+    print(f'Single-label training accuracy: {single_label_training_accuracy}')
     print(f'Training loss: {epoch_loss}')
 
 
@@ -362,6 +369,8 @@ for epoch in range(epoch_number):
         validation_loss = 0.0
         val_correct = 0
         val_total = 0
+        social_media_channel_val_correct=0
+        social_media_channel_val_total=0
         TP_val = torch.zeros(len(creator_label_map), dtype=torch.long)
         TN_val = torch.zeros(len(creator_label_map), dtype=torch.long)
         FP_val = torch.zeros(len(creator_label_map), dtype=torch.long)
@@ -389,16 +398,20 @@ for epoch in range(epoch_number):
             FP_val += FP_batch.cpu()
             FN_val += FN_batch.cpu()
 
+            social_media_channel_preds=social_media_channel_logits.argmax(1)
+            social_media_channel_val_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
+            social_media_channel_val_total += images.size(0)
+
         final_val_loss = validation_loss / len(validation_loader.dataset)
         total_creator_label=TP_val+TN_val+FP_val+FN_val
-        validation_accuracy=(TP_val+TN_val)/total_creator_label
+        multi_label_validation_accuracy= (TP_val + TN_val) / total_creator_label
 
-        macro_validation_accuracy=validation_accuracy.mean().item()
+        macro_validation_accuracy=multi_label_validation_accuracy.mean().item()
+        single_label_validation_accuracy=(social_media_channel_val_correct/social_media_channel_val_total)*100
 
-
-    #print(f'TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
-    #print(f'Total creator label: {total_creator_label}')
-    #print(f'Validation accuracy: {validation_accuracy}')
+    print(f'Multi-label \n TP: {TP_val},TN: {TN_val},FP: {FP_val},FN: {FN_val}')
+    print(f'Single-label Validation accuracy: {single_label_validation_accuracy}')
+    print(f'Multi-label Validation accuracy: {multi_label_validation_accuracy}')
 
 
     writer.add_scalars('Accuracy Metrics', {
@@ -442,6 +455,8 @@ with torch.no_grad():
     test_total=0
     all_labels=[]
     all_preds=[]
+    social_media_channel_test_correct = 0
+    social_media_channel_test_total = 0
     TP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
     TN_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
     FP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
@@ -470,23 +485,29 @@ with torch.no_grad():
         FN_testing += FN_batch.cpu()
         total_creator_label = TP_testing + TN_testing + FP_testing + FN_testing
 
+        social_media_channel_preds = social_media_channel_logits.argmax(1)
+        social_media_channel_test_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
+        social_media_channel_test_total += images.size(0)
 
         all_preds.extend(preds_testing.cpu().numpy().astype(int))
         all_labels.extend(creator_labels.cpu().numpy().astype(int))
 
 
-        testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
-        macro_testing_accuracy=testing_accuracy.mean().item()*100  #συνολικο accuracy
-        testing_f1=f1_score(all_labels,all_preds,average=None,zero_division=0)
-        testing_recall=recall_score(all_labels,all_preds,average=None,zero_division=0)
-        testing_precision=precision_score(all_labels,all_preds,average=None, zero_division=0)
+    testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
+    macro_testing_accuracy=testing_accuracy.mean().item()*100  #συνολικο accuracy
+    testing_f1=f1_score(all_labels,all_preds,average=None,zero_division=0)
+    testing_recall=recall_score(all_labels,all_preds,average=None,zero_division=0)
+    testing_precision=precision_score(all_labels,all_preds,average=None, zero_division=0)
+    single_label_testing_accuracy = (social_media_channel_val_correct / social_media_channel_val_total) * 100
+
 
 
     final_test_loss=testing_loss/len(test_loader.dataset)
     #conf_matrix=ConfusionMatrix(num_classes=7)
     #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
-    print(f'TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
-    print(f'->Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
+    print(f'Multi-label \n TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
+    print(f'Single-label Testing accuracy: {single_label_testing_accuracy}')
+    print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     #print(conf_matrix)
     print(f'F1 score: {testing_f1}')
     print(f'Recall score: {testing_recall}')
