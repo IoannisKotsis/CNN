@@ -40,7 +40,7 @@ min_delta=1e-4
 
 transform=transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((224,224))
+    transforms.Resize((512,512))
                          ])
 
 #$$$$$$$$$$$$$$$$-------
@@ -309,7 +309,7 @@ class Network(nn.Module):
 
 num_classes_singlelabel=len(social_media_channel_label_map)
 num_classes_multilabel=len(creator_label_map)
-model=Network(input_dims=(224,224,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel)
+model=Network(input_dims=(512,512,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel)
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
