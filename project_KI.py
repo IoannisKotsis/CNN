@@ -30,7 +30,7 @@ random.seed(25)
 #$$$$$$$$$$$$$-----
 
 #variables
-batch_size=128
+batch_size=64
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
@@ -455,8 +455,11 @@ with torch.no_grad():
     testing_loss=0.0
     test_correct=0
     test_total=0
-    all_labels=[]
-    all_preds=[]
+    all_single_labels = []
+    all_single_label_preds = []
+    all_multi_labels=[]
+    all_multi_label_preds=[]
+
     social_media_channel_test_correct = 0
     social_media_channel_test_total = 0
     TP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
@@ -491,31 +494,31 @@ with torch.no_grad():
         social_media_channel_test_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
         social_media_channel_test_total += images.size(0)
 
-        all_preds.extend(preds_testing.cpu().numpy().astype(int))
-        all_labels.extend(creator_labels.cpu().numpy().astype(int))
+        all_single_labels.extend(social_media_channel_labels.cpu().numpy().astype(int))
+        all_single_label_preds.extend(social_media_channel_preds.cpu().numpy().astype(int))
+        all_multi_labels.extend(creator_labels.cpu().numpy().astype(int))
+        all_multi_label_preds.extend(preds_testing.cpu().numpy().astype(int))
+
 
 
     testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
     macro_testing_accuracy=testing_accuracy.mean().item()*100  #συνολικο accuracy
-    testing_f1=f1_score(all_labels,all_preds,average=None,zero_division=0)
-    testing_recall=recall_score(all_labels,all_preds,average=None,zero_division=0)
-    testing_precision=precision_score(all_labels,all_preds,average=None, zero_division=0)
+    testing_f1=f1_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
+    testing_recall=recall_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
+    testing_precision=precision_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
     single_label_testing_accuracy = (social_media_channel_val_correct / social_media_channel_val_total) * 100
 
     print('Testing metrics: (below)')
     final_test_loss=testing_loss/len(test_loader.dataset)
-    #conf_matrix=ConfusionMatrix(num_classes=7)
-    #conf_matrix=confusion_matrix(all_labels, all_predictions, labels=np.arange(len(creator_label_map)))
+    conf_matrix=confusion_matrix(all_single_labels, all_single_label_preds, labels=np.arange(len(social_media_channel_label_map)))
     print(f'Multi-label \n TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
     print(f'->Single-label Testing accuracy: \n{single_label_testing_accuracy:.3f}%')
     print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
-    #print(conf_matrix)
+    print(f'Confusion Matrix: {conf_matrix}')
     print(f'F1 score: {testing_f1}')
     print(f'Recall score: {testing_recall}')
     print(f'Precision score: {testing_precision}')
 
-#plt.imshow(conf_matrix)
-#plt.show()
 
 print('end')
 if __name__ == '__main__':
