@@ -477,7 +477,7 @@ with torch.no_grad():
         loss=loss1+loss2
         testing_loss+= loss.item() * images.size(0)
         probs=torch.sigmoid(creator_logits)
-        preds_testing = (probs > 0.5)
+        preds_testing = (probs > 0.4)
 
         TP_batch = ((preds_testing == 1) & (creator_labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
         TN_batch = ((preds_testing == 0) & (creator_labels == 0)).sum(dim=0)
@@ -514,10 +514,10 @@ with torch.no_grad():
     print(f'Multi-label \n TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
     print(f'->Single-label Testing accuracy: \n{single_label_testing_accuracy:.3f}%')
     print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
-    print(f'Confusion Matrix: {conf_matrix}')
-    print(f'F1 score: {testing_f1}')
-    print(f'Recall score: {testing_recall}')
-    print(f'Precision score: {testing_precision}')
+    print(f'Confusion Matrix:\n {conf_matrix}')
+    print(f'Precision score: {testing_precision}') #ποσα ηταν οντως σωστα από αυτα που προεβλεψε σωστα
+    print(f'Recall score: {testing_recall}')  # απο τα πραγματικα θετικα, ποσα βρηκε
+    print(f'F1 score: {testing_f1}')  # δεικτης ισορροπιας precision-recall
 
 
 print('end')
