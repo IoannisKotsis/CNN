@@ -277,11 +277,11 @@ class Network(nn.Module):
                  input_dims,
                  output_dims_single_label,
                  output_dims_multi_label,
-                 linear1_output_size=50,
-                 linear2_output_size=50
+                 linear1_output_size=64,
+                 linear2_output_size=64
                  ):
         super().__init__()
-        self.block1=ConvBlock(input_dims, 32)  #βγαζει 8 feature maps
+        self.block1=ConvBlock(input_dims, 32)  #βγαζει 32 feature maps
         self.block2=ConvBlock(self.block1.output_dims(), 64)
         self.block3=ConvBlock(self.block2.output_dims(), 128)
 
@@ -514,10 +514,10 @@ with torch.no_grad():
     print(f'Multi-label \n TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
     print(f'->Single-label Testing accuracy: \n{single_label_testing_accuracy:.3f}%')
     print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
-    print(f'Confusion Matrix:\n {conf_matrix}')
-    print(f'Precision score: {testing_precision}') #ποσα ηταν οντως σωστα από αυτα που προεβλεψε σωστα
-    print(f'Recall score: {testing_recall}')  # απο τα πραγματικα θετικα, ποσα βρηκε
-    print(f'F1 score: {testing_f1}')  # δεικτης ισορροπιας precision-recall
+    print(f'Confusion Matrix (single-label):\n {conf_matrix}')
+    print(f'Precision score: {testing_precision:.4f}') #ποσα ηταν οντως σωστα από αυτα που προεβλεψε σωστα
+    print(f'Recall score: {testing_recall:.4f}')  # απο τα πραγματικα θετικα, ποσα βρηκε
+    print(f'F1 score: {testing_f1:.4f}')  # δεικτης ισορροπιας precision-recall
 
 
 print('end')
