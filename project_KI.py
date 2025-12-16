@@ -115,7 +115,7 @@ class0_counter=0
 class1_counter=0
 class2_counter=0
 
-for i in new_df['creator'].itertuples(index=False):  #κανει iterate στις γραμμες του dataframe
+for i in new_df['creator']:  #κανει iterate στις γραμμες του dataframe
     if 'Company' in i:
         class0_counter+=1
     if 'Individual' in i:
