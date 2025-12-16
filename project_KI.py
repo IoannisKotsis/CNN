@@ -21,7 +21,6 @@ from sklearn.metrics import confusion_matrix, f1_score, recall_score, precision_
 import json
 import random
 import ast
-#from torchmetrics import ConfusionMatrix
 
 
 random.seed(25)
@@ -70,6 +69,12 @@ with open('/home/ioankots/projects/CNN/datasets/digital-ads/image-annotations.qu
 #path των εικόνων
 images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
+for z in annotations:
+    if z.get('questionnaire_id')=='online-ad-2-part-2':
+        online_ad=z.get('questionnaire_id')
+        break
+print(f'Online ad: {online_ad}')
+
 
 rows=[]
 #επιλογη των paths και των values που θελω
@@ -102,6 +107,19 @@ for i in annotations:
 rows_df=pd.DataFrame(rows)
 yes_df=rows_df[rows_df['is-relevant']=='Yes']
 new_df=yes_df[['image_filepath','social-media-channel','creator']]
+
+
+class0_counter=len(new_df[new_df['creator']=='Company'])
+class1_counter=len(new_df[new_df['creator']=='Individual'])
+class2_counter=len(new_df[new_df['creator']=='Not sure'])
+
+
+
+
+
+
+
+
 print(f'Number of relevant images:',len(new_df))
 
 
@@ -125,6 +143,8 @@ creator_label_map={s:i for i,s in enumerate(sorted_list2)}
 
 print(f'Social media label map: \n {social_media_channel_label_map}')
 print(f'Creator label map: \n {creator_label_map}')
+listed_creator_label_map=list(creator_label_map)
+print(f'{listed_creator_label_map[0]}: {class0_counter} images ({(class0_counter/100)*100}%)')
 
 
 
@@ -177,6 +197,7 @@ class ImageDataset(Dataset):
                 creator_labels=ast.literal_eval(raw_creator_value)  #γινεται πραγματικη python λιστα
             else:
                 creator_labels=[raw_creator_value]
+
         elif isinstance(raw_creator_value, list):
             creator_labels=raw_creator_value
         else:
@@ -500,24 +521,28 @@ with torch.no_grad():
         all_multi_label_preds.extend(preds_testing.cpu().numpy().astype(int))
 
 
-
     testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
     macro_testing_accuracy=testing_accuracy.mean().item()*100  #συνολικο accuracy
     testing_f1=f1_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
+    testing_macro_f1 = f1_score(all_multi_labels, all_multi_label_preds, average='macro', zero_division=0)
+    testing_micro_f1 = f1_score(all_multi_labels, all_multi_label_preds, average='micro', zero_division=0)
     testing_recall=recall_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
     testing_precision=precision_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
-    single_label_testing_accuracy = (social_media_channel_val_correct / social_media_channel_val_total) * 100
+    single_label_testing_accuracy = (social_media_channel_test_correct / social_media_channel_test_total) * 100
 
     print('Testing metrics: (below)')
     final_test_loss=testing_loss/len(test_loader.dataset)
     conf_matrix=confusion_matrix(all_single_labels, all_single_label_preds, labels=np.arange(len(social_media_channel_label_map)))
     print(f'Multi-label \n TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
     print(f'->Single-label Testing accuracy: \n{single_label_testing_accuracy:.3f}%')
-    print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
+    #print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
+    print(f'->Testing Loss:\n {final_test_loss:.5f}')
     print(f'Confusion Matrix (single-label):\n {conf_matrix}')
-    print(f'Precision score: {testing_precision:.4f}') #ποσα ηταν οντως σωστα από αυτα που προεβλεψε σωστα
-    print(f'Recall score: {testing_recall:.4f}')  # απο τα πραγματικα θετικα, ποσα βρηκε
-    print(f'F1 score: {testing_f1:.4f}')  # δεικτης ισορροπιας precision-recall
+    print(f'Precision score: {testing_precision}') #ποσα ηταν οντως σωστα από αυτα που προεβλεψε σωστα
+    print(f'Recall score: {testing_recall}')  # απο τα πραγματικα θετικα, ποσα βρηκε
+    print(f'Macro F1 score: {testing_macro_f1}')  #
+    print(f'Micro F1 score: {testing_micro_f1}')  #
+    print(f'F1 score: {testing_f1}')  # δεικτης ισορροπιας precision-recall
 
 
 print('end')
