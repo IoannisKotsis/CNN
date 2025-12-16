@@ -23,7 +23,7 @@ import random
 import ast
 
 
-random.seed(25)
+random.seed(23)
 
 
 #$$$$$$$$$$$$$-----
@@ -109,18 +109,23 @@ yes_df=rows_df[rows_df['is-relevant']=='Yes']
 new_df=yes_df[['image_filepath','social-media-channel','creator']]
 
 
-class0_counter=len(new_df[new_df['creator']=='Company'])
-class1_counter=len(new_df[new_df['creator']=='Individual'])
-class2_counter=len(new_df[new_df['creator']=='Not sure'])
 
 
+class0_counter=0
+class1_counter=0
+class2_counter=0
 
-
-
-
-
+for i in new_df['creator'].itertuples(index=False):  #κανει iterate στις γραμμες του dataframe
+    if 'Company' in i:
+        class0_counter+=1
+    if 'Individual' in i:
+        class1_counter+=1
+    if 'Individual' in i:
+        class2_counter+=1
 
 print(f'Number of relevant images:',len(new_df))
+print(f'Company: {class0_counter} images ({class0_counter}/{len(new_df)*100}%) \n Individual: {class0_counter} images ({class0_counter}/{len(new_df)*100}%) \n Not sure: {class0_counter} images ({class0_counter}/{len(new_df)*100}%)')
+
 
 
 #εντοπισμος unique labels και δημιουργια label maps
