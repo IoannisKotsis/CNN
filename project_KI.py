@@ -195,7 +195,11 @@ class ImageDataset(Dataset):
         raw_creator_value=sample['creator']
         social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'],None)
 
-        assert isinstance(raw_creator_value, list), "Answer is not a string"
+        print(f'creator index: {creator_index}')
+        print(f'Raw creator value: {raw_creator_value}')
+        print(f'Raw creator value type: {type(raw_creator_value)}')
+
+        assert isinstance(raw_creator_value, list), "Answer is not a list"
 
         num_classes=len(self.creator_label_map)
         creator_multi_hot_vector=torch.zeros(num_classes, dtype=torch.float32)
