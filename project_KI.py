@@ -124,7 +124,7 @@ for i in new_df['creator']:  #κανει iterate στις γραμμες του 
         class2_counter+=1
 
 print(f'Number of relevant images:',len(new_df))
-print(f'Company: {class0_counter} images ({class0_counter}/{len(new_df)*100}%) \n Individual: {class0_counter} images ({class0_counter}/{len(new_df)*100}%) \n Not sure: {class0_counter} images ({class0_counter}/{len(new_df)*100}%)')
+print(f'Company: {class0_counter} images ({class0_counter/len(new_df)*100}%) \n Individual: {class1_counter} images ({class1_counter/len(new_df)*100}%) \n Not sure: {class2_counter} images ({class2_counter/len(new_df)*100}%)')
 
 
 
@@ -149,7 +149,7 @@ creator_label_map={s:i for i,s in enumerate(sorted_list2)}
 print(f'Social media label map: \n {social_media_channel_label_map}')
 print(f'Creator label map: \n {creator_label_map}')
 listed_creator_label_map=list(creator_label_map)
-print(f'{listed_creator_label_map[0]}: {class0_counter} images ({(class0_counter/100)*100}%)')
+#print(f'{listed_creator_label_map[0]}: {class0_counter} images ({(class0_counter/100)*100}%)')
 
 
 
