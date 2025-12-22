@@ -125,8 +125,6 @@ print(f'Number of relevant images:',len(new_df))
 print(f'Multi-label:\n-Company: {class0_counter} images ({class0_counter/len(new_df)*100:.3f}%) \n-Individual: {class1_counter} images ({class1_counter/len(new_df)*100:.3f}%) \n-Not sure: {class2_counter} images ({class2_counter/len(new_df)*100:.3f}%)')
 
 
-
-
 #εντοπισμος unique labels και δημιουργια label maps
 social_media_channel_set=set()
 for y in new_df['social-media-channel']:
@@ -145,10 +143,10 @@ sorted_list2=sorted(creator_flattened_set)
 social_media_channel_label_map={s:i for i,s in enumerate(sorted_list1)}
 creator_label_map={s:i for i,s in enumerate(sorted_list2)}
 
-print(f'Social media label map: \n {social_media_channel_label_map}')
-print(f'Creator label map: \n {creator_label_map}')
+#print(f'Social media label map: \n {social_media_channel_label_map}')
+#print(f'Creator label map: \n {creator_label_map}')
 listed_creator_label_map=list(creator_label_map)
-#print(f'{listed_creator_label_map[0]}: {class0_counter} images ({(class0_counter/100)*100}%)')
+
 
 
 
@@ -468,6 +466,7 @@ for epoch in range(epoch_number):
     else:
         wait+=1
         if wait>=patience:
+            print('')
             print(f'->Training stopped after {epoch} epochs with best validation loss: {best_val_loss:.6f}')
             break
 
@@ -545,6 +544,7 @@ with torch.no_grad():
     #print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(f'->Testing Loss:\n {final_test_loss:.5f}')
     print(f'Confusion Matrix (single-label):\n {conf_matrix}')
+    print('')
     print(f'Per-label accuracy: {testing_accuracy}')
     print(f'Precision score: {testing_precision}') #ποσα ηταν οντως σωστα από αυτα που προεβλεψε σωστα
     print(f'Recall score: {testing_recall}')  # απο τα πραγματικα θετικα, ποσα βρηκε
