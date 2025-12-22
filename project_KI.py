@@ -109,8 +109,6 @@ yes_df=rows_df[rows_df['is-relevant']=='Yes']
 new_df=yes_df[['image_filepath','social-media-channel','creator']]
 
 
-
-
 class0_counter=0
 class1_counter=0
 class2_counter=0
@@ -124,7 +122,8 @@ for i in new_df['creator']:  #κανει iterate στις γραμμες του 
         class2_counter+=1
 
 print(f'Number of relevant images:',len(new_df))
-print(f'Company: {class0_counter} images ({class0_counter/len(new_df)*100:.3f}%) \n Individual: {class1_counter} images ({class1_counter/len(new_df)*100:.3f}%) \n Not sure: {class2_counter} images ({class2_counter/len(new_df)*100:.3f}%)')
+print(f'Multi-label:\n-Company: {class0_counter} images ({class0_counter/len(new_df)*100:.3f}%) \n-Individual: {class1_counter} images ({class1_counter/len(new_df)*100:.3f}%) \n-Not sure: {class2_counter} images ({class2_counter/len(new_df)*100:.3f}%)')
+
 
 
 
@@ -196,17 +195,7 @@ class ImageDataset(Dataset):
         raw_creator_value=sample['creator']
         social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'],None)
 
-        if isinstance(raw_creator_value, str):
-            raw_creator_value=raw_creator_value.strip()   #αφαιρει τυχον κενα απο το string σε αρχη και τελος
-            if raw_creator_value.startswith('[') and raw_creator_value.endswith(']'):
-                creator_labels=ast.literal_eval(raw_creator_value)  #γινεται πραγματικη python λιστα
-            else:
-                creator_labels=[raw_creator_value]
-
-        elif isinstance(raw_creator_value, list):
-            creator_labels=raw_creator_value
-        else:
-            creator_labels=[]
+        assert isinstance(raw_creator_value, list), "Answer is not a string"
 
         num_classes=len(self.creator_label_map)
         creator_multi_hot_vector=torch.zeros(num_classes, dtype=torch.float32)
@@ -535,6 +524,7 @@ with torch.no_grad():
     testing_precision=precision_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
     single_label_testing_accuracy = (social_media_channel_test_correct / social_media_channel_test_total) * 100
 
+    print('')
     print('Testing metrics: (below)')
     final_test_loss=testing_loss/len(test_loader.dataset)
     conf_matrix=confusion_matrix(all_single_labels, all_single_label_preds, labels=np.arange(len(social_media_channel_label_map)))
