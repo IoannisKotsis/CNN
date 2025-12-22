@@ -195,11 +195,19 @@ class ImageDataset(Dataset):
         raw_creator_value=sample['creator']
         social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'],None)
 
-        print(f'creator index: {creator_index}')
-        print(f'Raw creator value: {raw_creator_value}')
-        print(f'Raw creator value type: {type(raw_creator_value)}')
+        if isinstance(raw_creator_value, str):
+            raw_creator_value = raw_creator_value.strip()  # αφαιρει τυχον κενα απο το string σε αρχη και τελος
+            if raw_creator_value.startswith('[') and raw_creator_value.endswith(']'):
+                creator_labels = ast.literal_eval(raw_creator_value)  # γινεται πραγματικη python λιστα
+            else:
+                creator_labels = [raw_creator_value]
 
-        assert isinstance(raw_creator_value, list), "Answer is not a list"
+        elif isinstance(raw_creator_value, list):
+            creator_labels = raw_creator_value
+        else:
+            creator_labels = []
+
+        assert isinstance(creator_labels, list), "Answer is not a list"
 
         num_classes=len(self.creator_label_map)
         creator_multi_hot_vector=torch.zeros(num_classes, dtype=torch.float32)
