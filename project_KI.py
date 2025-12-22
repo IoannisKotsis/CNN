@@ -120,11 +120,11 @@ for i in new_df['creator']:  #κανει iterate στις γραμμες του 
         class0_counter+=1
     if 'Individual' in i:
         class1_counter+=1
-    if 'Individual' in i:
+    if 'Not sure' in i:
         class2_counter+=1
 
 print(f'Number of relevant images:',len(new_df))
-print(f'Company: {class0_counter} images ({class0_counter/len(new_df)*100}%) \n Individual: {class1_counter} images ({class1_counter/len(new_df)*100}%) \n Not sure: {class2_counter} images ({class2_counter/len(new_df)*100}%)')
+print(f'Company: {class0_counter} images ({class0_counter/len(new_df)*100:.3f}%) \n Individual: {class1_counter} images ({class1_counter/len(new_df)*100:.3f}%) \n Not sure: {class2_counter} images ({class2_counter/len(new_df)*100:.3f}%)')
 
 
 
@@ -543,6 +543,7 @@ with torch.no_grad():
     #print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(f'->Testing Loss:\n {final_test_loss:.5f}')
     print(f'Confusion Matrix (single-label):\n {conf_matrix}')
+    print(f'Per-label accuracy: {testing_accuracy}')
     print(f'Precision score: {testing_precision}') #ποσα ηταν οντως σωστα από αυτα που προεβλεψε σωστα
     print(f'Recall score: {testing_recall}')  # απο τα πραγματικα θετικα, ποσα βρηκε
     print(f'Macro F1 score: {testing_macro_f1}')  #
