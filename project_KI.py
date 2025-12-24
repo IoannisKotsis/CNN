@@ -28,21 +28,26 @@ random.seed(23)
 
 #$$$$$$$$$$$$$-----
 
-#variables
+#configs
 batch_size=64
 train_split_pct=0.7
 validation_split_pct=0.15
 test_split_pct=0.15
-epoch_number=150
+epoch_number=100
 lr=1e-3
 min_delta=1e-4
+resize_width=512
+resize_height=512
+
+validation_multilabel_threshold=0.4
+testing_multilabel_threshold=0.4
+
+#$$$$$$$$$$$$--------
 
 transform=transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((512,512))
+    transforms.Resize((resize_width,resize_height))
                          ])
-
-#$$$$$$$$$$$$$$$$-------
 
 print(f'Batch size: {batch_size}')
 
@@ -412,7 +417,7 @@ for epoch in range(epoch_number):
             loss=loss1+loss2
             validation_loss+= loss.item() * images.size(0)
             probs=torch.sigmoid(creator_logits)    #κανει τα logits->πιθανοτητες
-            preds_val = (probs>0.5).float()
+            preds_val = (probs>validation_multilabel_threshold).float()
 
             TP_batch = ((preds_val == 1) & (creator_labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
             TN_batch = ((preds_val == 0) & (creator_labels == 0)).sum(dim=0)
@@ -503,7 +508,7 @@ with torch.no_grad():
         loss=loss1+loss2
         testing_loss+= loss.item() * images.size(0)
         probs=torch.sigmoid(creator_logits)
-        preds_testing = (probs > 0.4)
+        preds_testing = (probs > testing_multilabel_threshold)
 
         TP_batch = ((preds_testing == 1) & (creator_labels == 1)).sum(dim=0)  # μετράει τα True σε καθε στηλη
         TN_batch = ((preds_testing == 0) & (creator_labels == 0)).sum(dim=0)
