@@ -22,10 +22,6 @@ import json
 import random
 import ast
 
-
-random.seed(23)
-
-
 #$$$$$$$$$$$$$-----
 
 #configs
@@ -41,6 +37,8 @@ resize_height=512
 
 validation_multilabel_threshold=0.4
 testing_multilabel_threshold=0.4
+
+random.seed(23)
 
 #$$$$$$$$$$$$--------
 
@@ -91,6 +89,7 @@ for i in annotations:
     relevant_value = None
     social_media_channel_value = None
     creator_value = None
+    logo_value = None
 
     for a in answers:
         if a.get('variable')=='is-relevant':
@@ -100,23 +99,29 @@ for i in annotations:
                     creator_value = b.get('answer')
                 elif b.get('variable') == 'social-media-channel':
                     social_media_channel_value = b.get('answer')
+                elif b.get('variable') == "shows-logo":
+                    logo_value = b.get('answer')
 
 
     rows.append({'image_filepath': str(full_path),
                  'is-relevant': relevant_value,
                  'social-media-channel': social_media_channel_value,
-                 'creator': creator_value})       #rows= πινακας με 1 λεξικό για καθε εικόνα
+                 'creator': creator_value,
+                 'logo': logo_value})       #rows= πινακας με 1 λεξικό για καθε εικόνα
 
 
 #δημιουργια dataframe από rows
 rows_df=pd.DataFrame(rows)
 yes_df=rows_df[rows_df['is-relevant']=='Yes']
-new_df=yes_df[['image_filepath','social-media-channel','creator']]
+new_df=yes_df[['image_filepath','social-media-channel','creator','logo']]
 
 
 class0_counter=0
 class1_counter=0
 class2_counter=0
+
+yes_counter=0
+no_counter=0
 
 for i in new_df['creator']:  #κανει iterate στις γραμμες του dataframe
     if 'Company' in i:
@@ -127,13 +132,22 @@ for i in new_df['creator']:  #κανει iterate στις γραμμες του 
         class2_counter+=1
 
 print(f'Number of relevant images:',len(new_df))
-print(f'Multi-label:\n-Company: {class0_counter} images ({class0_counter/len(new_df)*100:.3f}%) \n-Individual: {class1_counter} images ({class1_counter/len(new_df)*100:.3f}%) \n-Not sure: {class2_counter} images ({class2_counter/len(new_df)*100:.3f}%)')
+print(f'\nMulti-label:\n-Company: {class0_counter} images ({class0_counter/len(new_df)*100:.3f}%) \n-Individual: {class1_counter} images ({class1_counter/len(new_df)*100:.3f}%) \n-Not sure: {class2_counter} images ({class2_counter/len(new_df)*100:.3f}%)')
+
+
+for i in new_df['logo']:
+    if 'Yes' in i:
+        yes_counter+=1
+    if 'No' in i:
+        no_counter+=1
+
+print(f'\nBinary-label:\n-Yes: {yes_counter} images ({yes_counter/len(new_df)*100:.3f}%) \n-No: {no_counter} images ({no_counter/len(new_df)*100:.3f}%)')
 
 
 #εντοπισμος unique labels και δημιουργια label maps
 social_media_channel_set=set()
-for y in new_df['social-media-channel']:
-    social_media_channel_set.add(y)
+for x in new_df['social-media-channel']:
+    social_media_channel_set.add(x)
 
 creator_flattened_set=set()
 for x in new_df['creator']:
@@ -142,16 +156,22 @@ for x in new_df['creator']:
     else:
         creator_flattened_set.add(x)
 
+logo_set=set()
+for x in new_df['logo']:
+    logo_set.add(x)
+
 sorted_list1=sorted(social_media_channel_set)
 sorted_list2=sorted(creator_flattened_set)
+sorted_list3=sorted(logo_set)
 
 social_media_channel_label_map={s:i for i,s in enumerate(sorted_list1)}
 creator_label_map={s:i for i,s in enumerate(sorted_list2)}
+logo_label_map={s:i for i,s in enumerate(sorted_list3)}
 
 #print(f'Social media label map: \n {social_media_channel_label_map}')
 #print(f'Creator label map: \n {creator_label_map}')
+print(f'Logo label map: {logo_label_map}')
 listed_creator_label_map=list(creator_label_map)
-
 
 
 
@@ -183,10 +203,12 @@ class ImageDataset(Dataset):
                  csvfile,
                  social_media_channel_label_map,
                  creator_label_map,
+                 logo_label_map,
                  transform=None):
         self.transform=transform
         self.samples =pd.read_csv(csvfile)
         self.creator_label_map=creator_label_map
+        self.logo_label_map=logo_label_map
         self.social_media_channel_label_map = social_media_channel_label_map
 
     def __len__(self):
@@ -195,8 +217,10 @@ class ImageDataset(Dataset):
     def __getitem__(self, creator_index):
         sample=self.samples.iloc[creator_index]   #αποθηκευση του i-οστού λεξικου στη μεταβλητη sample
         image_path=sample['image_filepath']  #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
+        social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'], None)
         raw_creator_value=sample['creator']
-        social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'],None)
+        logo_label_value=self.logo_label_map.get(sample['logo'], None)
+
 
         if isinstance(raw_creator_value, str):
             raw_creator_value = raw_creator_value.strip()  # αφαιρει τυχον κενα απο το string σε αρχη και τελος
@@ -231,7 +255,7 @@ class ImageDataset(Dataset):
         std = torch.clamp(std, min=1e-6)  #για να μη διαιρεσει με 0
         image=(image-mean)/std
 
-        return image, social_media_channel_label_value ,creator_multi_hot_vector
+        return image, social_media_channel_label_value ,creator_multi_hot_vector, logo_label_value
 
 
 
@@ -307,6 +331,7 @@ class Network(nn.Module):
                  input_dims,
                  output_dims_single_label,
                  output_dims_multi_label,
+                 output_dims_binary_label,
                  linear1_output_size=64,
                  linear2_output_size=64
                  ):
@@ -323,6 +348,7 @@ class Network(nn.Module):
         self.fc2 = nn.Linear(linear1_output_size, linear2_output_size)
         self.output_layer1 = nn.Linear(linear2_output_size, output_dims_single_label)
         self.output_layer2 = nn.Linear(linear2_output_size, output_dims_multi_label)
+        self.output_layer3 = nn.Linear(linear2_output_size, output_dims_binary_label)
 
 
     def forward(self, x):
@@ -335,11 +361,14 @@ class Network(nn.Module):
         x=self.dropout(x)
         single_label_head=self.output_layer1(x)
         multi_label_head= self.output_layer2(x)
-        return single_label_head, multi_label_head
+        binary_label_head=self.output_layer3(x)
+
+        return single_label_head, multi_label_head, binary_label_head
 
 num_classes_singlelabel=len(social_media_channel_label_map)
 num_classes_multilabel=len(creator_label_map)
-model=Network(input_dims=(512,512,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel)
+num_classes_binarylabel=len(logo_label_map)
+model=Network(input_dims=(512,512,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel,output_dims_binary_label=num_classes_binarylabel)
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -348,8 +377,8 @@ print(f'running on device:',device)
 model.to(device)
 criterion_single_label=nn.CrossEntropyLoss()
 criterion_multi_label=nn.BCEWithLogitsLoss()
+criterion_binary_label=nn.BCEWithLogitsLoss()
 optimizer=optim.Adam(model.parameters(), lr)
-
 
 
 #καθορισμος παραμετρων early stopping
@@ -368,15 +397,19 @@ for epoch in range(epoch_number):
     social_media_channel_train_total=0
 
 
-    for images, social_media_channel_labels, creator_labels in train_loader:
+    for images, social_media_channel_labels, creator_labels,logo_labels in train_loader:
         images=images.to(device)
+
         social_media_channel_labels=social_media_channel_labels.to(device)
         creator_labels=creator_labels.to(device)
+        logo_labels=logo_labels.to(device)
+
         optimizer.zero_grad()
-        social_media_channel_logits, creator_logits=model(images)
+        social_media_channel_logits, creator_logits,logo_logits=model(images)
         loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
         loss2=criterion_multi_label(creator_logits,creator_labels)
-        loss=loss1+loss2
+        loss3=criterion_binary_label(logo_logits,logo_labels)
+        loss=loss1+loss2+loss3
         loss.backward()
         optimizer.step()
         running_loss+= loss.item() * images.size(0)
@@ -407,14 +440,18 @@ for epoch in range(epoch_number):
         FP_val = torch.zeros(len(creator_label_map), dtype=torch.long)
         FN_val = torch.zeros(len(creator_label_map), dtype=torch.long)
 
-        for images, social_media_channel_labels, creator_labels in validation_loader:
+        for images, social_media_channel_labels, creator_labels,logo_labels in validation_loader:
             images=images.to(device)
+
             social_media_channel_labels = social_media_channel_labels.to(device)
             creator_labels = creator_labels.to(device)
-            social_media_channel_logits, creator_logits= model(images)
+            logo_labels-=logo_labels.to(device)
+
+            social_media_channel_logits, creator_logits,logo_logits= model(images)
             loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
             loss2 = criterion_multi_label(creator_logits, creator_labels)
-            loss=loss1+loss2
+            loss3 = criterion_binary_label(logo_logits, logo_labels)
+            loss=loss1+loss2+loss3
             validation_loss+= loss.item() * images.size(0)
             probs=torch.sigmoid(creator_logits)    #κανει τα logits->πιθανοτητες
             preds_val = (probs>validation_multilabel_threshold).float()
@@ -452,7 +489,7 @@ for epoch in range(epoch_number):
 
     writer.add_scalars('Loss Curves', {
         'Training Loss': epoch_loss,
-        'validation Loss': final_val_loss
+        'Validation Loss': final_val_loss
     }, epoch)
 
     #early stopping
@@ -498,13 +535,17 @@ with torch.no_grad():
     FP_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
     FN_testing = torch.zeros(len(creator_label_map), dtype=torch.long)
 
-    for images, social_media_channel_labels, creator_labels in test_loader:
+    for images, social_media_channel_labels, creator_labels,logo_labels in test_loader:
         images=images.to(device)
+
         social_media_channel_labels = social_media_channel_labels.to(device)
         creator_labels = creator_labels.to(device)
-        social_media_channel_logits, creator_logits=model(images)
+        logo_labels = logo_labels.to(device)
+
+        social_media_channel_logits, creator_logits,logo_logits=model(images)
         loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
         loss2=criterion_multi_label(creator_logits, creator_labels)
+        loss3 = criterion_binary_label(logo_logits, logo_labels)
         loss=loss1+loss2
         testing_loss+= loss.item() * images.size(0)
         probs=torch.sigmoid(creator_logits)
