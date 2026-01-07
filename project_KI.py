@@ -260,9 +260,9 @@ class ImageDataset(Dataset):
 
 
 #δημιουργία datasets
-training_dataset=ImageDataset(train_csv,social_media_channel_label_map, creator_label_map, transform=transform)
-validation_dataset=ImageDataset(validation_csv,social_media_channel_label_map, creator_label_map, transform=transform)
-test_dataset=ImageDataset(test_csv,social_media_channel_label_map, creator_label_map, transform=transform)
+training_dataset=ImageDataset(train_csv,social_media_channel_label_map, creator_label_map,logo_label_map, transform=transform)
+validation_dataset=ImageDataset(validation_csv,social_media_channel_label_map, creator_label_map,logo_label_map, transform=transform)
+test_dataset=ImageDataset(test_csv,social_media_channel_label_map, creator_label_map,logo_label_map, transform=transform)
 
 train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
 validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
