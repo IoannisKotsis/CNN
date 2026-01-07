@@ -403,7 +403,7 @@ for epoch in range(epoch_number):
 
         social_media_channel_labels=social_media_channel_labels.to(device)
         creator_labels=creator_labels.to(device)
-        logo_labels=logo_labels.to(device)
+        logo_labels=logo_labels.float().to(device)
 
         optimizer.zero_grad()
         social_media_channel_logits, creator_logits,logo_logits=model(images)
@@ -446,7 +446,7 @@ for epoch in range(epoch_number):
 
             social_media_channel_labels = social_media_channel_labels.to(device)
             creator_labels = creator_labels.to(device)
-            logo_labels-=logo_labels.to(device)
+            logo_labels-=logo_labels.float().to(device)
 
             social_media_channel_logits, creator_logits,logo_logits= model(images)
             loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
@@ -541,7 +541,7 @@ with torch.no_grad():
 
         social_media_channel_labels = social_media_channel_labels.to(device)
         creator_labels = creator_labels.to(device)
-        logo_labels = logo_labels.to(device)
+        logo_labels = logo_labels.float().to(device)
 
         social_media_channel_logits, creator_logits,logo_logits=model(images)
         loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
