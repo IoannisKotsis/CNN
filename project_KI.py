@@ -219,7 +219,8 @@ class ImageDataset(Dataset):
         image_path=sample['image_filepath']  #αποθηκευση του string path της εικονας στη μεταβλτητη image_path
         social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'], None)
         raw_creator_value=sample['creator']
-        logo_label_value=self.logo_label_map.get(sample['logo'], None)
+        raw_logo_label_value=self.logo_label_map.get(sample['logo'], None)
+        logo_label_value=torch.tensor(raw_logo_label_value,dtype=torch.float32)
 
 
         if isinstance(raw_creator_value, str):
@@ -331,7 +332,6 @@ class Network(nn.Module):
                  input_dims,
                  output_dims_single_label,
                  output_dims_multi_label,
-                 output_dims_binary_label,
                  linear1_output_size=64,
                  linear2_output_size=64
                  ):
@@ -348,7 +348,7 @@ class Network(nn.Module):
         self.fc2 = nn.Linear(linear1_output_size, linear2_output_size)
         self.output_layer1 = nn.Linear(linear2_output_size, output_dims_single_label)
         self.output_layer2 = nn.Linear(linear2_output_size, output_dims_multi_label)
-        self.output_layer3 = nn.Linear(linear2_output_size, output_dims_binary_label)
+        self.output_layer3 = nn.Linear(linear2_output_size, 1)
 
 
     def forward(self, x):
