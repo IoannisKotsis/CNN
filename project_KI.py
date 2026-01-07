@@ -418,7 +418,7 @@ for epoch in range(epoch_number):
         social_media_channel_train_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
         social_media_channel_train_total += images.size(0)
 
-
+    print(f'logo_labels shape: {logo_labels.size()}, logo_logits shape: {logo_logits.size()}')
     epoch_loss= running_loss / len(train_loader.dataset)
     single_label_training_accuracy= (social_media_channel_train_correct / social_media_channel_train_total) * 100
     #print('Training metrics: (below)')
