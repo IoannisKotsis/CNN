@@ -332,6 +332,7 @@ class Network(nn.Module):
                  input_dims,
                  output_dims_single_label,
                  output_dims_multi_label,
+                 output_dims_binary_label,
                  linear1_output_size=64,
                  linear2_output_size=64
                  ):
@@ -348,7 +349,7 @@ class Network(nn.Module):
         self.fc2 = nn.Linear(linear1_output_size, linear2_output_size)
         self.output_layer1 = nn.Linear(linear2_output_size, output_dims_single_label)
         self.output_layer2 = nn.Linear(linear2_output_size, output_dims_multi_label)
-        self.output_layer3 = nn.Linear(linear2_output_size, 1)
+        self.output_layer3 = nn.Linear(linear2_output_size, output_dims_binary_label)
 
 
     def forward(self, x):
@@ -367,8 +368,8 @@ class Network(nn.Module):
 
 num_classes_singlelabel=len(social_media_channel_label_map)
 num_classes_multilabel=len(creator_label_map)
-num_classes_binarylabel=len(logo_label_map)
-model=Network(input_dims=(512,512,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel,output_dims_binary_label=1)
+binary_variable=1
+model=Network(input_dims=(512,512,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel,output_dims_binary_label=binary_variable)
 
 #χρήση GPU (εαν υπάρχει)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
