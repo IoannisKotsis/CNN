@@ -332,6 +332,7 @@ class Network(nn.Module):
                  input_dims,
                  output_dims_single_label,
                  output_dims_multi_label,
+                 output_dims_binary_label=1,
                  linear1_output_size=64,
                  linear2_output_size=64
                  ):
@@ -348,7 +349,7 @@ class Network(nn.Module):
         self.fc2 = nn.Linear(linear1_output_size, linear2_output_size)
         self.output_layer1 = nn.Linear(linear2_output_size, output_dims_single_label)
         self.output_layer2 = nn.Linear(linear2_output_size, output_dims_multi_label)
-        self.output_layer3 = nn.Linear(linear2_output_size, 1)
+        self.output_layer3 = nn.Linear(linear2_output_size, output_dims_binary_label)
 
 
     def forward(self, x):
