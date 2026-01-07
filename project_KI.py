@@ -220,7 +220,7 @@ class ImageDataset(Dataset):
         social_media_channel_label_value = self.social_media_channel_label_map.get(sample['social-media-channel'], None)
         raw_creator_value=sample['creator']
         raw_logo_label_value=self.logo_label_map.get(sample['logo'], None)
-        logo_label_value=torch.tensor(raw_logo_label_value,dtype=torch.float32)
+        logo_label_value=torch.tensor([raw_logo_label_value],dtype=torch.float32)
 
 
         if isinstance(raw_creator_value, str):
