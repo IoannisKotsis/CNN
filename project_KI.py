@@ -38,7 +38,7 @@ resize_height=512
 validation_multilabel_threshold=0.4
 testing_multilabel_threshold=0.4
 
-random.seed(23)
+random.seed(25)
 
 #$$$$$$$$$$$$--------
 
@@ -269,14 +269,14 @@ train_loader=DataLoader(training_dataset,batch_size=batch_size,shuffle=True)
 validation_loader=DataLoader(validation_dataset,batch_size=batch_size,shuffle=False)
 test_loader=DataLoader(test_dataset,batch_size=batch_size,shuffle=False)
 
-print(f'Length of training dataset',len(training_dataset))
-print(f'Length of validation dataset',len(validation_dataset))
-print(f'Length of test dataset',len(test_dataset))
+#print(f'Length of training dataset',len(training_dataset))
+#print(f'Length of validation dataset',len(validation_dataset))
+#print(f'Length of test dataset',len(test_dataset))
 
 
-print(f'Train loader size',len(train_loader))
-print(f'Validation loader size',len(validation_loader))
-print(f'Test loader size',len(test_loader))
+#print(f'Train loader size',len(train_loader))
+#print(f'Validation loader size',len(validation_loader))
+#print(f'Test loader size',len(test_loader))
 
 
 
@@ -419,7 +419,6 @@ for epoch in range(epoch_number):
         social_media_channel_train_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
         social_media_channel_train_total += images.size(0)
 
-    print(f'logo_labels shape: {logo_labels.size()}, logo_logits shape: {logo_logits.size()}')
     epoch_loss= running_loss / len(train_loader.dataset)
     single_label_training_accuracy= (social_media_channel_train_correct / social_media_channel_train_total) * 100
     #print('Training metrics: (below)')
@@ -528,6 +527,8 @@ with torch.no_grad():
     all_single_label_preds = []
     all_multi_labels=[]
     all_multi_label_preds=[]
+    all_binary_labels=[]
+    all_binary_label_preds=[]
 
     social_media_channel_test_correct = 0
     social_media_channel_test_total = 0
@@ -567,10 +568,14 @@ with torch.no_grad():
         social_media_channel_test_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
         social_media_channel_test_total += images.size(0)
 
+        logo_preds = logo_logits.argmax(1)
+
         all_single_labels.extend(social_media_channel_labels.cpu().numpy().astype(int))
         all_single_label_preds.extend(social_media_channel_preds.cpu().numpy().astype(int))
         all_multi_labels.extend(creator_labels.cpu().numpy().astype(int))
         all_multi_label_preds.extend(preds_testing.cpu().numpy().astype(int))
+        all_binary_labels.extend(logo_labels.cpu().numpy().astype(int))
+        all_binary_label_preds.extend(logo_preds.cpu().numpy().astype(int))
 
 
     testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
@@ -582,13 +587,16 @@ with torch.no_grad():
     testing_precision=precision_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
     single_label_testing_accuracy = (social_media_channel_test_correct / social_media_channel_test_total) * 100
 
+    binary_f1=f1_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
+    binary_recall=recall_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
+    binary_precision=precision_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
+
     print('')
     print('Testing metrics: (below)')
     final_test_loss=testing_loss/len(test_loader.dataset)
     conf_matrix=confusion_matrix(all_single_labels, all_single_label_preds, labels=np.arange(len(social_media_channel_label_map)))
     print(f'Multi-label \n TP: {TP_testing},\n TN: {TN_testing},\n FP: {FP_testing},\n FN: {FN_testing}')
     print(f'->Single-label Testing accuracy: \n{single_label_testing_accuracy:.3f}%')
-    #print(f'->Multi-label Testing Accuracy: \n {macro_testing_accuracy:.3f}% \n->Testing Loss:\n {final_test_loss:.5f}')
     print(f'->Testing Loss:\n {final_test_loss:.5f}')
     print(f'Confusion Matrix (single-label):\n {conf_matrix}')
     print('')
@@ -598,6 +606,9 @@ with torch.no_grad():
     print(f'Macro F1 score: {testing_macro_f1}')  #
     print(f'Micro F1 score: {testing_micro_f1}')  #
     print(f'F1 score: {testing_f1}')  # δεικτης ισορροπιας precision-recall
+    print(f'\nBinary F1 score: {binary_f1}')
+    print(f'Binary Recall score: {binary_recall}')
+    print(f'Binary Precision score: {binary_precision}')
 
 
 print('end')
