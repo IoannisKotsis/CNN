@@ -594,9 +594,8 @@ with torch.no_grad():
         social_media_channel_test_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
         social_media_channel_test_total += images.size(0)
 
-        logo_preds =torch.sigmoid(logo_logits)
-        logo_preds_testing = (logo_preds > testing_binary_threshold)
-        logo_preds_testing = logo_preds.int()
+        logo_probs = torch.sigmoid(logo_logits)
+        logo_preds = (logo_probs > testing_binary_threshold).int()
         all_binary_label_preds.extend(logo_preds.cpu().numpy())
 
         all_single_labels.extend(social_media_channel_labels.cpu().numpy().astype(int))
