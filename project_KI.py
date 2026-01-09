@@ -596,7 +596,9 @@ with torch.no_grad():
 
         logo_probs = torch.sigmoid(logo_logits)
         logo_preds = (logo_probs > testing_binary_threshold).int()
-        all_binary_label_preds.extend(logo_preds.cpu().numpy())
+        all_binary_label_preds.extend(
+        logo_preds.view(-1).cpu().numpy().astype(int))
+        all_binary_labels.extend(logo_labels.view(-1).cpu().numpy().astype(int))
 
         all_single_labels.extend(social_media_channel_labels.cpu().numpy().astype(int))
         all_single_label_preds.extend(social_media_channel_preds.cpu().numpy().astype(int))
@@ -614,9 +616,9 @@ with torch.no_grad():
     testing_precision=precision_score(all_multi_labels, all_multi_label_preds, average=None, zero_division=0)
     single_label_testing_accuracy = (social_media_channel_test_correct / social_media_channel_test_total) * 100
 
-    binary_f1=f1_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
-    binary_recall=recall_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
-    binary_precision=precision_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
+    binary_f1 = f1_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
+    binary_recall = recall_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
+    binary_precision = precision_score(all_binary_labels, all_binary_label_preds, average=None, zero_division=0)
 
     print('')
     print('Testing metrics: (below)')
