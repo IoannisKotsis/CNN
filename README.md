@@ -16,7 +16,7 @@ A multi-task approach was chosen to evaluate how the model performs when learnin
 - Positive-Class F1-score: 0.94<br>
 <br>
 
-Dataset: 5851 images -> training 70%, validation 15%, testing 15%
+Dataset: 5,851 images -> training 70%, validation 15%, testing 15%
 
 Model overview (see below):
 
