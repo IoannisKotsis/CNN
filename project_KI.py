@@ -595,14 +595,15 @@ with torch.no_grad():
         social_media_channel_test_total += images.size(0)
 
         logo_preds =torch.sigmoid(logo_logits)
-        logo_preds_testing = (probs > testing_binary_threshold)
+        logo_preds_testing = (logo_preds > testing_binary_threshold)
+        logo_preds_testing = logo_preds.int()
+        all_binary_label_preds.extend(logo_preds.cpu().numpy())
 
         all_single_labels.extend(social_media_channel_labels.cpu().numpy().astype(int))
         all_single_label_preds.extend(social_media_channel_preds.cpu().numpy().astype(int))
         all_multi_labels.extend(creator_labels.cpu().numpy().astype(int))
         all_multi_label_preds.extend(preds_testing.cpu().numpy().astype(int))
-        all_binary_labels.extend(logo_labels.cpu().numpy().astype(int))
-        all_binary_label_preds.extend(logo_preds.cpu().numpy().astype(int))
+
 
 
     testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
