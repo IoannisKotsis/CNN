@@ -7,5 +7,6 @@ food-related images from social media ads.
 
 Dataset: 5851 images -> training 70%, validation 15%, testing 15%
 
-Model overview:
+Model overview (see below):
+
 ![alt](https://github.com/IoannisKotsis/CNN/blob/1d9daf32bab2256a92a802298c9db6224521edaa/cnn_structure.png)
