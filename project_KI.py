@@ -37,6 +37,7 @@ resize_height=512
 
 validation_multilabel_threshold=0.4
 testing_multilabel_threshold=0.4
+testing_binary_threshold=0.4
 
 random.seed(25)
 
@@ -49,7 +50,7 @@ transform=transforms.Compose([
 
 print(f'Batch size: {batch_size}')
 
-#δημιουργία φακέλου για tensorboard
+#tensorboard folder creation
 day_stamp=datetime.datetime.now().strftime("%Y-%m-%d")
 time_stamp=datetime.datetime.now().strftime("%H-%M-%S")
 day_path= Path('runs/tb_logs') / day_stamp
@@ -58,18 +59,19 @@ day_path.mkdir(parents=True, exist_ok=True)
 time_path.mkdir(parents=True, exist_ok=True)
 writer=SummaryWriter(time_path)
 
-#φάκελος του project
+#project folders
 project_ki='project_ki'
 os.makedirs('project_ki', exist_ok=True)
 os.makedirs(os.path.join('project_ki','data'),exist_ok=True)
 os.makedirs(os.path.join('project_ki','csv_files'),exist_ok=True)
 os.makedirs(os.path.join(project_ki,'checkpoints'),exist_ok=True)
 
-#ανοιγμα του json file
+
+#open json file
 with open('/home/ioankots/projects/CNN/datasets/digital-ads/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8') as file:
     annotations=json.load(file)
 
-#path των εικόνων
+#image path
 images_folder_path=Path("/home/ioankots/projects/CNN/datasets/digital-ads")
 
 for z in annotations:
@@ -79,8 +81,10 @@ for z in annotations:
 print(f'Online ad: {online_ad}')
 
 
+
+#paths and values choice
 rows=[]
-#επιλογη των paths και των values που θελω
+
 for i in annotations:
     path=i.get('image_filepath')
     full_path=images_folder_path/path
@@ -110,7 +114,7 @@ for i in annotations:
                  'logo': logo_value})       #rows= πινακας με 1 λεξικό για καθε εικόνα
 
 
-#δημιουργια dataframe από rows
+#dataframe creation from rows
 rows_df=pd.DataFrame(rows)
 yes_df=rows_df[rows_df['is-relevant']=='Yes']
 new_df=yes_df[['image_filepath','social-media-channel','creator','logo']]
@@ -122,6 +126,13 @@ class2_counter=0
 
 yes_counter=0
 no_counter=0
+
+instagram_counter=0
+not_sure_counter=0
+other_counter=0
+snapchat_counter=0
+tiktok_counter=0
+youtube_counter=0
 
 for i in new_df['creator']:  #κανει iterate στις γραμμες του dataframe
     if 'Company' in i:
@@ -143,8 +154,23 @@ for i in new_df['logo']:
 
 print(f'\nBinary-label:\n-Yes: {yes_counter} images ({yes_counter/len(new_df)*100:.3f}%) \n-No: {no_counter} images ({no_counter/len(new_df)*100:.3f}%)')
 
+for i in new_df['social-media-channel']:
+    if 'Instagram' in i:
+        instagram_counter+=1
+    if 'Not sure' in i:
+        not_sure_counter+=1
+    if 'Other' in i:
+        other_counter+=1
+    if 'Snapchat' in i:
+        snapchat_counter+=1
+    if 'TikTok' in i:
+        tiktok_counter+=1
+    if 'YouTube' in i:
+        youtube_counter+=1
 
-#εντοπισμος unique labels και δημιουργια label maps
+print(f'\nSingle-label:\n-Instagram: {instagram_counter} images ({instagram_counter/len(new_df)*100:.3f}%) \n-Not sure: {not_sure_counter} images ({not_sure_counter/len(new_df)*100:.3f}%) \n-Other: {other_counter} images ({other_counter/len(new_df)*100:.3f}%) \n-Snapchat: {snapchat_counter} images ({snapchat_counter/len(new_df)*100:.3f}%) \n-TikTok: {tiktok_counter} images ({tiktok_counter/len(new_df)*100:.3f}%) \n-YouTube: {youtube_counter} images ({youtube_counter/len(new_df)*100:.3f}%)')
+
+#unique labels detection and label maps creation
 social_media_channel_set=set()
 for x in new_df['social-media-channel']:
     social_media_channel_set.add(x)
@@ -175,18 +201,18 @@ listed_creator_label_map=list(creator_label_map)
 
 
 
-#split dataframe
+#dataframe split
 df_length=len(new_df)
 train_split=int(train_split_pct * df_length)
 validation_split=int(validation_split_pct * df_length)
 
-#δημιουργια των splits
+#splits creation
 shuffled_df=new_df.sample(frac=1,random_state=18)
 train_rows=shuffled_df[:train_split]
 validation_rows=shuffled_df[train_split:train_split+validation_split]
 test_rows=shuffled_df[train_split+validation_split:]
 
-#δημιουργια των csv files
+#csv files creation
 train_rows.to_csv('project_ki/csv_files/train_csv.csv', index=False)
 validation_rows.to_csv('project_ki/csv_files/validation_csv.csv', index=False)
 test_rows.to_csv('project_ki/csv_files/test_csv.csv', index=False)
@@ -197,7 +223,7 @@ test_csv='project_ki/csv_files/test_csv.csv'
 
 
 
-#κλάση δημιουργίας dataset
+#dataset creation class
 class ImageDataset(Dataset):
     def __init__(self,
                  csvfile,
@@ -260,7 +286,7 @@ class ImageDataset(Dataset):
 
 
 
-#δημιουργία datasets
+#datasets creation
 training_dataset=ImageDataset(train_csv,social_media_channel_label_map, creator_label_map,logo_label_map, transform=transform)
 validation_dataset=ImageDataset(validation_csv,social_media_channel_label_map, creator_label_map,logo_label_map, transform=transform)
 test_dataset=ImageDataset(test_csv,social_media_channel_label_map, creator_label_map,logo_label_map, transform=transform)
@@ -298,7 +324,7 @@ class ConvBlock(nn.Module):
         self._input_shape = input_dims[:-1]       #κρατάει (28,28) απο το (28,28,1)
         self._input_channels = input_dims[-1]   #κρατάει (1) απο το (28,28,1)
 
-        #Περιπτώσεις padding
+        #padding cases
         if padding == 'same':
             self._output_shape = np.floor(((np.ceil(np.asarray(self._input_shape) / np.asarray(conv_stride)) + 2 * np.asarray(pool_padding) - np.asarray(pool_kernel_size)) / np.asarray(pool_stride)) + 1).astype(int)
         elif padding == 'valid':
@@ -371,7 +397,7 @@ num_classes_multilabel=len(creator_label_map)
 binary_variable=1
 model=Network(input_dims=(512,512,3),output_dims_single_label=num_classes_singlelabel,output_dims_multi_label=num_classes_multilabel,output_dims_binary_label=binary_variable)
 
-#χρήση GPU (εαν υπάρχει)
+#GPU utilization (if exists)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f'running on device:',device)
 
@@ -382,7 +408,7 @@ criterion_binary_label=nn.BCEWithLogitsLoss()
 optimizer=optim.Adam(model.parameters(), lr)
 
 
-#καθορισμος παραμετρων early stopping
+#early stopping parameters
 import copy
 best_val_loss=float('inf')
 best_state=None
@@ -568,7 +594,8 @@ with torch.no_grad():
         social_media_channel_test_correct += (social_media_channel_preds == social_media_channel_labels).sum().item()
         social_media_channel_test_total += images.size(0)
 
-        logo_preds = logo_logits.argmax(1)
+        logo_preds =torch.sigmoid(logo_logits)
+        logo_preds_testing = (probs > testing_binary_threshold)
 
         all_single_labels.extend(social_media_channel_labels.cpu().numpy().astype(int))
         all_single_label_preds.extend(social_media_channel_preds.cpu().numpy().astype(int))
