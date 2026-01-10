@@ -41,6 +41,7 @@ testing_binary_threshold=0.4
 
 random.seed(25)
 
+json_path="/home/ioankots/projects/CNN/datasets/digital-ads/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8"
 #$$$$$$$$$$$$--------
 
 transform=transforms.Compose([
@@ -68,7 +69,7 @@ os.makedirs(os.path.join(project_ki,'checkpoints'),exist_ok=True)
 
 
 #open json file
-with open('/home/ioankots/projects/CNN/datasets/digital-ads/image-annotations.questionnaire_answers.json', 'r', encoding='utf-8') as file:
+with open('json_path') as file:
     annotations=json.load(file)
 
 #image path
@@ -604,7 +605,6 @@ with torch.no_grad():
         all_single_label_preds.extend(social_media_channel_preds.cpu().numpy().astype(int))
         all_multi_labels.extend(creator_labels.cpu().numpy().astype(int))
         all_multi_label_preds.extend(preds_testing.cpu().numpy().astype(int))
-
 
 
     testing_accuracy=(TP_testing+TN_testing)/total_creator_label #per label accuracy
