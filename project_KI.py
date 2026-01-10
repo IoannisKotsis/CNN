@@ -574,7 +574,7 @@ with torch.no_grad():
         loss1=criterion_single_label(social_media_channel_logits,social_media_channel_labels)
         loss2=criterion_multi_label(creator_logits, creator_labels)
         loss3 = criterion_binary_label(logo_logits, logo_labels)
-        loss=loss1+loss2
+        loss=loss1+loss2+loss3
         testing_loss+= loss.item() * images.size(0)
         probs=torch.sigmoid(creator_logits)
         preds_testing = (probs > testing_multilabel_threshold)
