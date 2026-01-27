@@ -1,6 +1,6 @@
 This multi-task CNN is designed to analyze food-related images from social media advertisements using multiple visual classification tasks.
 
-A multi-task approach was chosen to evaluate how the model performs when learning multiple visual tasks simultaneously using a shared backbone.<br>
+*A multi-task approach was chosen to evaluate how the model performs when learning multiple visual tasks simultaneously using a shared backbone.*<br>
 <br>
 
 **Head 1**: Multi-class classification  
