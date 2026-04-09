@@ -42,4 +42,4 @@ Required libraries:
 
 Model overview(see below):
 
-![](model_architecture.png)
+![](assets/model_architecture.png)
