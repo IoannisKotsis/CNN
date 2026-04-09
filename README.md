@@ -3,7 +3,7 @@ This multi-task CNN is designed to analyze food-related images from social media
 *A multi-task approach was chosen to evaluate how the model performs when learning multiple visual tasks simultaneously using a shared backbone.*<br>
 <br>
 
-**Head 1**: Multi-class classification  
+**Head 1**: Single-class classification  
 – Social media channel prediction  
 – Accuracy: 96.13%
 
